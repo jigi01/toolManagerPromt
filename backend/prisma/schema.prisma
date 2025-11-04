@@ -1,0 +1,79 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Перечисление ролей пользователей
+enum Role {
+  EMPLOYEE // Обычный сотрудник
+  ADMIN    // Босс / Администратор
+}
+
+// Модель пользователя (сотрудника)
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique // Логин
+  password  String   // Хэшированный пароль
+  name      String
+  role      Role     @default(EMPLOYEE)
+  createdAt DateTime @default(now())
+
+  // Инструменты, которые сейчас у пользователя
+  toolsOwned Tool[] @relation("ToolOwner")
+
+  // Записи в истории, где он был "от кого"
+  historyFrom ToolHistory[] @relation("FromUser")
+  // Записи в истории, где он был "кому"
+  historyTo   ToolHistory[] @relation("ToUser")
+}
+
+// Перечисление статусов инструмента
+enum ToolStatus {
+  AVAILABLE   // На складе (доступен)
+  IN_USE      // В использовании (у сотрудника)
+  MAINTENANCE // На обслуживании
+}
+
+// Модель инструмента
+model Tool {
+  id           Int        @id @default(autoincrement())
+  name         String     // Название (н.п. "Дрель Makita XF-200")
+  serialNumber String     @unique // Серийный номер
+  description  String?
+  status       ToolStatus @default(AVAILABLE)
+  createdAt    DateTime   @default(now())
+
+  // Текущий владелец
+  currentOwnerId Int?
+  currentOwner   User? @relation("ToolOwner", fields: [currentOwnerId], references: [id])
+
+  // История перемещений
+  history ToolHistory[]
+}
+
+// Модель для отслеживания истории перемещений
+model ToolHistory {
+  id        Int      @id @default(autoincrement())
+  timestamp DateTime @default(now())
+
+  toolId Int
+  tool   Tool @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  // Кто передал (может быть null, если инструмент взят со склада)
+  fromUserId Int?
+  fromUser   User? @relation("FromUser", fields: [fromUserId], references: [id])
+
+  // Кому передали
+  toUserId Int?
+  toUser   User? @relation("ToUser", fields: [toUserId], references: [id])
+
+  // Примечание (например, "Передано на обслуживание")
+  notes String?
+}

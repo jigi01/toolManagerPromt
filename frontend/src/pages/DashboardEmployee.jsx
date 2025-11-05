@@ -7,32 +7,32 @@ import {
   useToast,
   Spinner,
   Center,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  Badge,
   Button,
   Card,
   CardBody,
   HStack,
-  useDisclosure
+  SimpleGrid
 } from '@chakra-ui/react';
-import { FiPackage, FiSend } from 'react-icons/fi';
-import { Link as RouterLink } from 'react-router-dom';
+import { FiPackage, FiGrid, FiList } from 'react-icons/fi';
 import api from '../services/api';
 import useAuthStore from '../store/authStore';
-import TransferToolModal from '../components/TransferToolModal';
+import ToolCard from '../components/ToolCard';
+import ToolTable from '../components/ToolTable';
+import EditToolModal from '../components/EditToolModal';
 
 const DashboardEmployee = () => {
   const [myTools, setMyTools] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTool, setSelectedTool] = useState(null);
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [viewMode, setViewMode] = useState('grid');
+  const [editingTool, setEditingTool] = useState(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const toast = useToast();
-  const user = useAuthStore((state) => state.user);
+  const { user, hasPermission } = useAuthStore();
+
+  const canUpdate = hasPermission('TOOL_UPDATE');
+  const canDelete = hasPermission('TOOL_DELETE');
+  const canTransfer = hasPermission('TOOL_TRANSFER');
+  const canCheckin = hasPermission('TOOL_CHECKIN');
 
   useEffect(() => {
     fetchMyTools();
@@ -55,14 +55,79 @@ const DashboardEmployee = () => {
     }
   };
 
-  const handleTransferClick = (tool) => {
-    setSelectedTool(tool);
-    onOpen();
+  const handleDeleteTool = async (toolId) => {
+    if (!window.confirm('Вы уверены, что хотите удалить этот инструмент?')) return;
+
+    try {
+      await api.delete(`/tools/${toolId}`);
+      toast({
+        title: 'Инструмент удален',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+      fetchMyTools();
+    } catch (error) {
+      toast({
+        title: 'Ошибка',
+        description: error.response?.data?.error || 'Не удалось удалить инструмент',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    }
   };
 
-  const handleTransferSuccess = () => {
+  const handleTransfer = async (toolId, toUserId) => {
+    try {
+      await api.post(`/tools/${toolId}/transfer`, { toUserId });
+      toast({
+        title: 'Инструмент передан',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+      fetchMyTools();
+    } catch (error) {
+      toast({
+        title: 'Ошибка передачи',
+        description: error.response?.data?.error || 'Не удалось передать инструмент',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const handleCheckin = async (toolId) => {
+    try {
+      await api.post(`/tools/${toolId}/checkin`);
+      toast({
+        title: 'Инструмент возвращен на склад',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+      fetchMyTools();
+    } catch (error) {
+      toast({
+        title: 'Ошибка',
+        description: error.response?.data?.error || 'Не удалось вернуть инструмент',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const handleEditTool = (tool) => {
+    setEditingTool(tool);
+    setIsEditOpen(true);
+  };
+
+  const handleEditSuccess = () => {
     fetchMyTools();
-    onClose();
+    setIsEditOpen(false);
   };
 
   if (loading) {
@@ -75,14 +140,36 @@ const DashboardEmployee = () => {
 
   return (
     <VStack spacing={8} align="stretch">
-      <Box>
-        <Heading size="lg" mb={2}>
-          Мои Инструменты
-        </Heading>
-        <Text color="gray.600">
-          Инструменты, которые числятся за вами
-        </Text>
-      </Box>
+      <HStack justify="space-between">
+        <Box>
+          <Heading size="lg" mb={2}>
+            Мои Инструменты
+          </Heading>
+          <Text color="gray.600">
+            Инструменты, которые числятся за вами
+          </Text>
+        </Box>
+        {myTools.length > 0 && (
+          <HStack>
+            <Button
+              leftIcon={<FiGrid />}
+              variant={viewMode === 'grid' ? 'solid' : 'ghost'}
+              onClick={() => setViewMode('grid')}
+              size="sm"
+            >
+              Карточки
+            </Button>
+            <Button
+              leftIcon={<FiList />}
+              variant={viewMode === 'table' ? 'solid' : 'ghost'}
+              onClick={() => setViewMode('table')}
+              size="sm"
+            >
+              Таблица
+            </Button>
+          </HStack>
+        )}
+      </HStack>
 
       {myTools.length === 0 ? (
         <Card>
@@ -100,65 +187,37 @@ const DashboardEmployee = () => {
             </Center>
           </CardBody>
         </Card>
+      ) : viewMode === 'grid' ? (
+        <SimpleGrid columns={{ base: 1, md: 2, lg: 3, xl: 4 }} spacing={6}>
+          {myTools.map((tool) => (
+            <ToolCard
+              key={tool.id}
+              tool={tool}
+              onDelete={canDelete ? handleDeleteTool : null}
+              onTransfer={canTransfer ? handleTransfer : null}
+              onCheckin={canCheckin ? handleCheckin : null}
+              canUpdate={canUpdate}
+              onEdit={canUpdate ? handleEditTool : null}
+            />
+          ))}
+        </SimpleGrid>
       ) : (
-        <Card>
-          <CardBody>
-            <Table variant="simple">
-              <Thead>
-                <Tr>
-                  <Th>Название</Th>
-                  <Th>Серийный номер</Th>
-                  <Th>Статус</Th>
-                  <Th>Действия</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {myTools.map((tool) => (
-                  <Tr key={tool.id}>
-                    <Td fontWeight="medium">{tool.name}</Td>
-                    <Td>
-                      <Text fontFamily="mono" fontSize="sm">
-                        {tool.serialNumber}
-                      </Text>
-                    </Td>
-                    <Td>
-                      <Badge colorScheme="blue">В использовании</Badge>
-                    </Td>
-                    <Td>
-                      <HStack spacing={2}>
-                        <Button
-                          as={RouterLink}
-                          to={`/tools/${tool.id}`}
-                          size="sm"
-                          variant="outline"
-                        >
-                          Детали
-                        </Button>
-                        <Button
-                          size="sm"
-                          leftIcon={<FiSend />}
-                          colorScheme="blue"
-                          variant="outline"
-                          onClick={() => handleTransferClick(tool)}
-                        >
-                          Передать
-                        </Button>
-                      </HStack>
-                    </Td>
-                  </Tr>
-                ))}
-              </Tbody>
-            </Table>
-          </CardBody>
-        </Card>
+        <ToolTable
+          tools={myTools}
+          onDelete={canDelete ? handleDeleteTool : null}
+          onTransfer={canTransfer ? handleTransfer : null}
+          onCheckin={canCheckin ? handleCheckin : null}
+          canUpdate={canUpdate}
+          onEdit={canUpdate ? handleEditTool : null}
+        />
       )}
 
-      {selectedTool && (
-        <TransferToolModal
-          isOpen={isOpen}
-          onClose={onClose}
-          tool={selectedTool}
-          onSuccess={handleTransferSuccess}
+      {editingTool && (
+        <EditToolModal
+          isOpen={isEditOpen}
+          onClose={() => setIsEditOpen(false)}
+          tool={editingTool}
+          onSuccess={handleEditSuccess}
         />
       )}
     </VStack>

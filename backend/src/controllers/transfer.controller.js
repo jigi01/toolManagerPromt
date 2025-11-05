@@ -8,7 +8,13 @@ export const assignTool = async (req, res) => {
       return res.status(400).json({ error: 'toolId и toUserId обязательны.' });
     }
 
-    const tool = await transferService.assignToolToUser(toolId, toUserId, notes);
+    const tool = await transferService.assignToolToUser(
+      toolId,
+      toUserId,
+      req.user.id,
+      req.user.companyId,
+      notes
+    );
     res.json({ tool, message: 'Инструмент успешно выдан.' });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -23,7 +29,11 @@ export const returnTool = async (req, res) => {
       return res.status(400).json({ error: 'toolId обязателен.' });
     }
 
-    const tool = await transferService.returnToolToWarehouse(toolId, req.user.id);
+    const tool = await transferService.returnToolToWarehouse(
+      toolId,
+      req.user.id,
+      req.user.companyId
+    );
     res.json({ tool, message: 'Инструмент успешно возвращен на склад.' });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -41,7 +51,8 @@ export const transferTool = async (req, res) => {
     const tool = await transferService.transferToolBetweenUsers(
       toolId, 
       req.user.id, 
-      toUserId, 
+      toUserId,
+      req.user.companyId,
       notes
     );
     res.json({ tool, message: 'Инструмент успешно передан.' });

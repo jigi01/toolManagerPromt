@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import ProtectedRoute from '../components/ProtectedRoute';
 import AdminRoute from '../components/AdminRoute';
+import BossRoute from '../components/BossRoute';
+import PermissionRoute from '../components/PermissionRoute';
 import LoginPage from '../pages/LoginPage';
 import RegisterPage from '../pages/RegisterPage';
 import DashboardAdmin from '../pages/DashboardAdmin';
@@ -9,11 +11,12 @@ import DashboardEmployee from '../pages/DashboardEmployee';
 import ToolsPage from '../pages/ToolsPage';
 import ToolDetailsPage from '../pages/ToolDetailsPage';
 import UsersPage from '../pages/UsersPage';
+import RolesPage from '../pages/RolesPage';
 import useAuthStore from '../store/authStore';
 
 const HomePage = () => {
-  const { isAdmin } = useAuthStore();
-  return isAdmin ? <DashboardAdmin /> : <DashboardEmployee />;
+  const { isBoss } = useAuthStore();
+  return isBoss ? <DashboardAdmin /> : <DashboardEmployee />;
 };
 
 const AppRouter = () => {
@@ -38,11 +41,11 @@ const AppRouter = () => {
           path="/tools"
           element={
             <ProtectedRoute>
-              <AdminRoute>
+              <PermissionRoute permission="TOOL_READ">
                 <Layout>
                   <ToolsPage />
                 </Layout>
-              </AdminRoute>
+              </PermissionRoute>
             </ProtectedRoute>
           }
         />
@@ -62,11 +65,24 @@ const AppRouter = () => {
           path="/users"
           element={
             <ProtectedRoute>
-              <AdminRoute>
+              <PermissionRoute permission="USER_READ">
                 <Layout>
                   <UsersPage />
                 </Layout>
-              </AdminRoute>
+              </PermissionRoute>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/roles"
+          element={
+            <ProtectedRoute>
+              <BossRoute>
+                <Layout>
+                  <RolesPage />
+                </Layout>
+              </BossRoute>
             </ProtectedRoute>
           }
         />

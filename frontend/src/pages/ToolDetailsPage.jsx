@@ -20,10 +20,13 @@ import {
   Tr,
   Th,
   Td,
-  Avatar
+  Avatar,
+  useDisclosure
 } from '@chakra-ui/react';
-import { FiArrowLeft, FiClock } from 'react-icons/fi';
+import { FiArrowLeft, FiClock, FiEdit2 } from 'react-icons/fi';
 import api from '../services/api';
+import useAuthStore from '../store/authStore';
+import EditToolModal from '../components/EditToolModal';
 
 const ToolDetailsPage = () => {
   const { id } = useParams();
@@ -31,6 +34,10 @@ const ToolDetailsPage = () => {
   const [tool, setTool] = useState(null);
   const [loading, setLoading] = useState(true);
   const toast = useToast();
+  const { hasPermission } = useAuthStore();
+  const { isOpen, onOpen, onClose } = useDisclosure();
+
+  const canUpdate = hasPermission('TOOL_UPDATE');
 
   useEffect(() => {
     fetchToolDetails();
@@ -74,6 +81,11 @@ const ToolDetailsPage = () => {
     });
   };
 
+  const handleEditSuccess = () => {
+    fetchToolDetails();
+    onClose();
+  };
+
   if (loading) {
     return (
       <Center h="50vh">
@@ -90,6 +102,11 @@ const ToolDetailsPage = () => {
         <Button leftIcon={<FiArrowLeft />} variant="ghost" onClick={() => navigate(-1)}>
           Назад
         </Button>
+        {canUpdate && (
+          <Button leftIcon={<FiEdit2 />} colorScheme="blue" onClick={onOpen}>
+            Редактировать
+          </Button>
+        )}
       </HStack>
 
       <Card>
@@ -197,6 +214,15 @@ const ToolDetailsPage = () => {
           </VStack>
         </CardBody>
       </Card>
+
+      {tool && (
+        <EditToolModal
+          isOpen={isOpen}
+          onClose={onClose}
+          tool={tool}
+          onSuccess={handleEditSuccess}
+        />
+      )}
     </VStack>
   );
 };

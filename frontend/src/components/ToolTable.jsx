@@ -17,11 +17,11 @@ import {
   useDisclosure,
   Avatar
 } from '@chakra-ui/react';
-import { FiSend, FiPackage, FiTrash2, FiEye } from 'react-icons/fi';
+import { FiSend, FiPackage, FiTrash2, FiEye, FiEdit2 } from 'react-icons/fi';
 import { Link as RouterLink } from 'react-router-dom';
 import TransferModal from './TransferModal';
 
-const ToolTable = ({ tools, onDelete, onTransfer, onCheckin, canUpdate }) => {
+const ToolTable = ({ tools, onDelete, onTransfer, onCheckin, canUpdate, onEdit, currentUserId }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedTool, setSelectedTool] = useState(null);
 
@@ -59,86 +59,108 @@ const ToolTable = ({ tools, onDelete, onTransfer, onCheckin, canUpdate }) => {
               </Tr>
             </Thead>
             <Tbody>
-              {tools.map((tool) => (
-                <Tr key={tool.id}>
-                  <Td>
-                    <HStack spacing={3}>
-                      {tool.imageUrl ? (
-                        <Image
-                          src={tool.imageUrl}
-                          alt={tool.name}
-                          boxSize="40px"
-                          objectFit="cover"
-                          borderRadius="md"
-                        />
+              {tools.map((tool) => {
+                // Проверяем, может ли текущий пользователь передавать этот инструмент
+                const canTransferThisTool = onTransfer && (
+                  tool.status === 'AVAILABLE' || 
+                  tool.currentUserId === currentUserId
+                );
+
+                // Проверяем, может ли текущий пользователь вернуть этот инструмент на склад
+                const canCheckinThisTool = onCheckin && tool.status === 'IN_USE' && tool.currentUserId === currentUserId;
+
+                return (
+                  <Tr key={tool.id}>
+                    <Td>
+                      <HStack spacing={3}>
+                        {tool.imageUrl ? (
+                          <Image
+                            src={tool.imageUrl}
+                            alt={tool.name}
+                            boxSize="40px"
+                            objectFit="cover"
+                            borderRadius="md"
+                          />
+                        ) : (
+                          <Avatar name={tool.name} size="sm" />
+                        )}
+                        <Text fontWeight="medium">{tool.name}</Text>
+                      </HStack>
+                    </Td>
+                    <Td>
+                      <Text fontFamily="mono" fontSize="sm">
+                        {tool.serialNumber}
+                      </Text>
+                    </Td>
+                    <Td>{getStatusBadge(tool.status)}</Td>
+                    <Td>
+                      {tool.currentUser ? (
+                        <Text>{tool.currentUser.name}</Text>
                       ) : (
-                        <Avatar name={tool.name} size="sm" />
+                        <Text color="gray.500">—</Text>
                       )}
-                      <Text fontWeight="medium">{tool.name}</Text>
-                    </HStack>
-                  </Td>
-                  <Td>
-                    <Text fontFamily="mono" fontSize="sm">
-                      {tool.serialNumber}
-                    </Text>
-                  </Td>
-                  <Td>{getStatusBadge(tool.status)}</Td>
-                  <Td>
-                    {tool.currentUser ? (
-                      <Text>{tool.currentUser.name}</Text>
-                    ) : (
-                      <Text color="gray.500">—</Text>
-                    )}
-                  </Td>
-                  <Td>
-                    <HStack spacing={2}>
-                      <Button
-                        as={RouterLink}
-                        to={`/tools/${tool.id}`}
-                        size="sm"
-                        variant="outline"
-                        leftIcon={<FiEye />}
-                      >
-                        Детали
-                      </Button>
-                      
-                      {tool.status === 'AVAILABLE' && onTransfer && (
+                    </Td>
+                    <Td>
+                      <HStack spacing={2}>
                         <Button
+                          as={RouterLink}
+                          to={`/tools/${tool.id}`}
                           size="sm"
-                          leftIcon={<FiSend />}
-                          colorScheme="blue"
                           variant="outline"
-                          onClick={() => handleTransferClick(tool)}
+                          leftIcon={<FiEye />}
                         >
-                          Выдать
+                          Детали
                         </Button>
-                      )}
-                      
-                      {tool.status === 'IN_USE' && onCheckin && (
-                        <Button
-                          size="sm"
-                          leftIcon={<FiPackage />}
-                          colorScheme="green"
-                          variant="outline"
-                          onClick={() => onCheckin(tool.id)}
-                        >
-                          На склад
-                        </Button>
-                      )}
-                      
-                      {onDelete && (
-                        <IconButton
-                          icon={<FiTrash2 />}
-                          size="sm"
-                          colorScheme="red"
-                          variant="ghost"
-                          onClick={() => onDelete(tool.id)}
-                        />
-                      )}
-                    </HStack>
-                  </Td>
-                </Tr>
-              ))}
+                        
+                        {onEdit && (
+                          <IconButton
+                            icon={<FiEdit2 />}
+                            size="sm"
+                            colorScheme="blue"
+                            variant="ghost"
+                            onClick={() => onEdit(tool)}
+                            aria-label="Редактировать"
+                          />
+                        )}
+                        
+                        {canTransferThisTool && (
+                          <Button
+                            size="sm"
+                            leftIcon={<FiSend />}
+                            colorScheme="blue"
+                            variant="outline"
+                            onClick={() => handleTransferClick(tool)}
+                          >
+                            {tool.status === 'AVAILABLE' ? 'Выдать' : 'Передать'}
+                          </Button>
+                        )}
+                        
+                        {canCheckinThisTool && (
+                          <Button
+                            size="sm"
+                            leftIcon={<FiPackage />}
+                            colorScheme="green"
+                            variant="outline"
+                            onClick={() => onCheckin(tool.id)}
+                          >
+                            На склад
+                          </Button>
+                        )}
+                        
+                        {onDelete && (
+                          <IconButton
+                            icon={<FiTrash2 />}
+                            size="sm"
+                            colorScheme="red"
+                            variant="ghost"
+                            onClick={() => onDelete(tool.id)}
+                          />
+                        )}
+                      </HStack>
+                    </Td>
+                  </Tr>
+                );
+              })}
             </Tbody>
           </Table>
         </CardBody>

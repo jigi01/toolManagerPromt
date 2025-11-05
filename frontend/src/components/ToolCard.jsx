@@ -18,13 +18,22 @@ import {
   MenuItem,
   Box
 } from '@chakra-ui/react';
-import { FiMoreVertical, FiTrash2, FiSend, FiPackage, FiEye } from 'react-icons/fi';
+import { FiMoreVertical, FiTrash2, FiSend, FiPackage, FiEye, FiEdit2 } from 'react-icons/fi';
 import { Link as RouterLink } from 'react-router-dom';
 import TransferModal from './TransferModal';
 
-const ToolCard = ({ tool, onDelete, onTransfer, onCheckin, canUpdate }) => {
+const ToolCard = ({ tool, onDelete, onTransfer, onCheckin, canUpdate, onEdit, currentUserId }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedTool, setSelectedTool] = useState(null);
+
+  // Проверяем, может ли текущий пользователь передавать этот инструмент
+  const canTransferThisTool = onTransfer && (
+    tool.status === 'AVAILABLE' || // Инструмент на складе - может передавать любой с правом TOOL_TRANSFER
+    tool.currentUserId === currentUserId // Инструмент у текущего пользователя
+  );
+
+  // Проверяем, может ли текущий пользователь вернуть этот инструмент на склад
+  const canCheckinThisTool = onCheckin && tool.status === 'IN_USE' && tool.currentUserId === currentUserId;
 
   const getStatusBadge = (status) => {
     const statusMap = {
@@ -74,7 +83,7 @@ const ToolCard = ({ tool, onDelete, onTransfer, onCheckin, canUpdate }) => {
                   {tool.serialNumber}
                 </Text>
               </VStack>
-              {(onDelete || canUpdate) && (
+              {(onDelete || canUpdate || onEdit) && (
                 <Menu>
                   <MenuButton
                     as={IconButton}
@@ -83,9 +92,15 @@ const ToolCard = ({ tool, onDelete, onTransfer, onCheckin, canUpdate }) => {
                     size="sm"
                   />
                   <MenuList>
-                    {canUpdate && (
-                      <MenuItem icon={<FiEye />} as={RouterLink} to={`/tools/${tool.id}`}>
-                        Детали
+                    <MenuItem icon={<FiEye />} as={RouterLink} to={`/tools/${tool.id}`}>
+                      Детали
+                    </MenuItem>
+                    {onEdit && (
+                      <MenuItem 
+                        icon={<FiEdit2 />} 
+                        onClick={() => onEdit(tool)}
+                      >
+                        Редактировать
                       </MenuItem>
                     )}
                     {onDelete && (
@@ -136,7 +151,7 @@ const ToolCard = ({ tool, onDelete, onTransfer, onCheckin, canUpdate }) => {
                 Детали
               </Button>
               
-              {tool.status === 'AVAILABLE' && onTransfer && (
+              {canTransferThisTool && (
                 <Button
                   size="sm"
                   leftIcon={<FiSend />}
@@ -144,11 +159,11 @@ const ToolCard = ({ tool, onDelete, onTransfer, onCheckin, canUpdate }) => {
                   onClick={handleTransferClick}
                   flex={1}
                 >
-                  Выдать
+                  {tool.status === 'AVAILABLE' ? 'Выдать' : 'Передать'}
                 </Button>
               )}
               
-              {tool.status === 'IN_USE' && onCheckin && (
+              {canCheckinThisTool && (
                 <Button
                   size="sm"
                   leftIcon={<FiPackage />}

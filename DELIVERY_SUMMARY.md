@@ -184,7 +184,7 @@ cp .env.example .env
 # Отредактируйте .env (DATABASE_URL, JWT_SECRET)
 npx prisma migrate dev --name init
 npm run dev
-```
+```aaa
 
 ### 3. Frontend (новый терминал):
 ```bash

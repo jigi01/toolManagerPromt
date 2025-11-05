@@ -51,7 +51,7 @@ const ToolsPage = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
   const toast = useToast();
-  const { hasPermission } = useAuthStore();
+  const { user, hasPermission } = useAuthStore();
 
   const canCreate = hasPermission('TOOL_CREATE');
   const canUpdate = hasPermission('TOOL_UPDATE');
@@ -280,6 +280,7 @@ const ToolsPage = () => {
               onCheckin={canCheckin ? handleCheckin : null}
               canUpdate={canUpdate}
               onEdit={canUpdate ? handleEditTool : null}
+              currentUserId={user?.id}
             />
           ))}
         </SimpleGrid>
@@ -291,6 +292,7 @@ const ToolsPage = () => {
           onCheckin={canCheckin ? handleCheckin : null}
           canUpdate={canUpdate}
           onEdit={canUpdate ? handleEditTool : null}
+          currentUserId={user?.id}
         />
       )}
 

@@ -198,6 +198,7 @@ const DashboardEmployee = () => {
               onCheckin={canCheckin ? handleCheckin : null}
               canUpdate={canUpdate}
               onEdit={canUpdate ? handleEditTool : null}
+              currentUserId={user?.id}
             />
           ))}
         </SimpleGrid>
@@ -209,6 +210,7 @@ const DashboardEmployee = () => {
           onCheckin={canCheckin ? handleCheckin : null}
           canUpdate={canUpdate}
           onEdit={canUpdate ? handleEditTool : null}
+          currentUserId={user?.id}
         />
       )}
 

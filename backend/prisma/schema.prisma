@@ -55,6 +55,7 @@ model Role {
   permissions Permission[]
   
   users       User[]
+  invitations Invitation[]
   isBoss      Boolean      @default(false) // Специальный флаг для роли "Босса"
   createdAt   DateTime     @default(now())
 
@@ -95,6 +96,7 @@ model Invitation {
   company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   
   roleId    String?  // Роль, которая будет назначена при регистрации (опционально)
+  role      Role?    @relation(fields: [roleId], references: [id], onDelete: SetNull)
   
   expiresAt DateTime // Срок действия приглашения
   usedAt    DateTime? // Когда было использовано (null = не использовано)

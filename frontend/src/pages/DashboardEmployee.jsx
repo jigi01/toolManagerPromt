@@ -40,7 +40,7 @@ const DashboardEmployee = () => {
 
   const fetchMyTools = async () => {
     try {
-      const response = await api.get(`/tools?currentOwnerId=${user.id}`);
+      const response = await api.get(`/tools?currentUserId=${user.id}`);
       setMyTools(response.data.tools);
     } catch (error) {
       toast({

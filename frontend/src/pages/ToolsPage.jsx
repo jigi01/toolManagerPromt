@@ -32,6 +32,7 @@ import api from '../services/api';
 import useAuthStore from '../store/authStore';
 import ToolCard from '../components/ToolCard';
 import ToolTable from '../components/ToolTable';
+import EditToolModal from '../components/EditToolModal';
 
 const ToolsPage = () => {
   const [tools, setTools] = useState([]);
@@ -46,7 +47,9 @@ const ToolsPage = () => {
   const [viewMode, setViewMode] = useState('grid');
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
+  const [editingTool, setEditingTool] = useState(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
   const toast = useToast();
   const { hasPermission } = useAuthStore();
 
@@ -199,6 +202,16 @@ const ToolsPage = () => {
     }
   };
 
+  const handleEditTool = (tool) => {
+    setEditingTool(tool);
+    onEditOpen();
+  };
+
+  const handleEditSuccess = () => {
+    fetchTools();
+    onEditClose();
+  };
+
   if (loading) {
     return (
       <Center h="50vh">
@@ -266,6 +279,7 @@ const ToolsPage = () => {
               onTransfer={canTransfer ? handleTransfer : null}
               onCheckin={canCheckin ? handleCheckin : null}
               canUpdate={canUpdate}
+              onEdit={canUpdate ? handleEditTool : null}
             />
           ))}
         </SimpleGrid>
@@ -276,6 +290,7 @@ const ToolsPage = () => {
           onTransfer={canTransfer ? handleTransfer : null}
           onCheckin={canCheckin ? handleCheckin : null}
           canUpdate={canUpdate}
+          onEdit={canUpdate ? handleEditTool : null}
         />
       )}
 
@@ -373,11 +388,20 @@ const ToolsPage = () => {
                 </Button>
               </VStack>
             </form>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
-    </VStack>
-  );
-};
+            </ModalBody>
+            </ModalContent>
+            </Modal>
 
-export default ToolsPage;
+            {editingTool && (
+            <EditToolModal
+            isOpen={isEditOpen}
+            onClose={onEditClose}
+            tool={editingTool}
+            onSuccess={handleEditSuccess}
+            />
+            )}
+            </VStack>
+            );
+            };
+
+            export default ToolsPage;

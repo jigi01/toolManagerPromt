@@ -17,11 +17,11 @@ import {
   useDisclosure,
   Avatar
 } from '@chakra-ui/react';
-import { FiSend, FiPackage, FiTrash2, FiEye } from 'react-icons/fi';
+import { FiSend, FiPackage, FiTrash2, FiEye, FiEdit2 } from 'react-icons/fi';
 import { Link as RouterLink } from 'react-router-dom';
 import TransferModal from './TransferModal';
 
-const ToolTable = ({ tools, onDelete, onTransfer, onCheckin, canUpdate }) => {
+const ToolTable = ({ tools, onDelete, onTransfer, onCheckin, canUpdate, onEdit }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedTool, setSelectedTool] = useState(null);
 
@@ -101,6 +101,17 @@ const ToolTable = ({ tools, onDelete, onTransfer, onCheckin, canUpdate }) => {
                       >
                         Детали
                       </Button>
+                      
+                      {onEdit && (
+                        <IconButton
+                          icon={<FiEdit2 />}
+                          size="sm"
+                          colorScheme="blue"
+                          variant="ghost"
+                          onClick={() => onEdit(tool)}
+                          aria-label="Редактировать"
+                        />
+                      )}
                       
                       {tool.status === 'AVAILABLE' && onTransfer && (
                         <Button

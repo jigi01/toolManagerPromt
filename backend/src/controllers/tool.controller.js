@@ -8,8 +8,14 @@ export const createTool = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { name, serialNumber, description } = req.body;
-    const tool = await toolService.createTool(name, serialNumber, description);
+    const { name, serialNumber, description, imageUrl } = req.body;
+    const tool = await toolService.createTool(
+      name,
+      serialNumber,
+      description,
+      req.user.companyId,
+      imageUrl
+    );
 
     res.status(201).json({ tool });
   } catch (error) {
@@ -19,8 +25,8 @@ export const createTool = async (req, res) => {
 
 export const getTools = async (req, res) => {
   try {
-    const { status, currentOwnerId } = req.query;
-    const tools = await toolService.getAllTools({ status, currentOwnerId });
+    const { status, currentUserId } = req.query;
+    const tools = await toolService.getAllTools(req.user.companyId, { status, currentUserId });
 
     res.json({ tools });
   } catch (error) {
@@ -31,7 +37,7 @@ export const getTools = async (req, res) => {
 export const getTool = async (req, res) => {
   try {
     const { id } = req.params;
-    const tool = await toolService.getToolById(id);
+    const tool = await toolService.getToolById(id, req.user.companyId);
 
     res.json({ tool });
   } catch (error) {
@@ -44,7 +50,7 @@ export const updateTool = async (req, res) => {
     const { id } = req.params;
     const updates = req.body;
 
-    const tool = await toolService.updateTool(id, updates);
+    const tool = await toolService.updateTool(id, req.user.companyId, updates);
     res.json({ tool });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -54,9 +60,47 @@ export const updateTool = async (req, res) => {
 export const deleteTool = async (req, res) => {
   try {
     const { id } = req.params;
-    await toolService.deleteTool(id);
+    await toolService.deleteTool(id, req.user.companyId);
 
     res.json({ message: 'Инструмент удален успешно.' });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const transferTool = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { toUserId } = req.body;
+
+    if (!toUserId) {
+      return res.status(400).json({ error: 'Необходимо указать ID получателя.' });
+    }
+
+    const tool = await toolService.transferTool(
+      id,
+      toUserId,
+      req.user.id,
+      req.user.companyId
+    );
+
+    res.json({ tool });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const checkinTool = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const tool = await toolService.checkinTool(
+      id,
+      req.user.id,
+      req.user.companyId
+    );
+
+    res.json({ tool });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

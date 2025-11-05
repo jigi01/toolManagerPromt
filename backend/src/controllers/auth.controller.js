@@ -8,8 +8,8 @@ export const register = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { name, email, password } = req.body;
-    const { user, token } = await authService.registerUser(name, email, password);
+    const { name, email, password, companyName, inviteToken } = req.body;
+    const { user, token } = await authService.registerUser(name, email, password, companyName, inviteToken);
 
     res.cookie('token', token, {
       httpOnly: true,

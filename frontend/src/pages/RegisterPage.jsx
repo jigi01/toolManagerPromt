@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link as RouterLink, useSearchParams } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -13,7 +13,10 @@ import {
   useToast,
   Link,
   Card,
-  CardBody
+  CardBody,
+  Alert,
+  AlertIcon,
+  AlertDescription
 } from '@chakra-ui/react';
 import api from '../services/api';
 import useAuthStore from '../store/authStore';
@@ -22,26 +25,77 @@ const RegisterPage = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [companyName, setCompanyName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [searchParams] = useSearchParams();
+  const [inviteInfo, setInviteInfo] = useState(null);
+  const [inviteLoading, setInviteLoading] = useState(false);
+  
   const navigate = useNavigate();
   const toast = useToast();
   const setUser = useAuthStore((state) => state.setUser);
+
+  const inviteToken = searchParams.get('invite');
+
+  useEffect(() => {
+    const fetchInviteInfo = async () => {
+      if (inviteToken) {
+        setInviteLoading(true);
+        try {
+          const response = await api.get(`/invitations/public/${inviteToken}`);
+          setInviteInfo(response.data.invitation);
+          setEmail(response.data.invitation.email);
+        } catch (error) {
+          toast({
+            title: 'Ошибка приглашения',
+            description: error.response?.data?.error || 'Неверная ссылка приглашения',
+            status: 'error',
+            duration: 5000,
+            isClosable: true,
+          });
+        } finally {
+          setInviteLoading(false);
+        }
+      }
+    };
+
+    fetchInviteInfo();
+  }, [inviteToken, toast]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const response = await api.post('/auth/register', { name, email, password });
+      const payload = { name, email, password };
+      
+      if (inviteToken) {
+        payload.inviteToken = inviteToken;
+      } else {
+        if (!companyName) {
+          toast({
+            title: 'Ошибка',
+            description: 'Необходимо указать название компании',
+            status: 'error',
+            duration: 5000,
+            isClosable: true,
+          });
+          setLoading(false);
+          return;
+        }
+        payload.companyName = companyName;
+      }
+
+      const response = await api.post('/auth/register', payload);
       setUser(response.data.user);
       
-      const isAdmin = response.data.user.role === 'ADMIN';
+      const isBoss = response.data.user.role?.isBoss;
       
       toast({
         title: 'Регистрация успешна!',
-        description: isAdmin 
-          ? 'Вы первый пользователь и получили права администратора!' 
-          : `Добро пожаловать, ${response.data.user.name}!`,
+        description: isBoss 
+          ? 'Компания создана! Вы получили права Босса!' 
+          : `Добро пожаловать в ${inviteInfo?.company?.name || 'компанию'}, ${response.data.user.name}!`,
         status: 'success',
         duration: 5000,
         isClosable: true,
@@ -60,17 +114,36 @@ const RegisterPage = () => {
     }
   };
 
+  if (inviteLoading) {
+    return (
+      <Container maxW="md" py={20}>
+        <Card>
+          <CardBody>
+            <Text textAlign="center">Загрузка информации о приглашении...</Text>
+          </CardBody>
+        </Card>
+      </Container>
+    );
+  }
+
   return (
     <Container maxW="md" py={20}>
       <Card>
         <CardBody>
           <VStack spacing={6}>
             <Heading size="lg" textAlign="center">
-              Регистрация в ToolManager
+              {inviteInfo ? 'Принять приглашение' : 'Создать новую компанию'}
             </Heading>
-            <Text color="gray.600" textAlign="center">
-              Создайте аккаунт для управления инструментами
-            </Text>
+            
+            {inviteInfo && (
+              <Alert status="info">
+                <AlertIcon />
+                <AlertDescription>
+                  Вы приглашены в компанию <strong>{inviteInfo.company.name}</strong>
+                  {inviteInfo.role && ` с ролью ${inviteInfo.role.name}`}
+                </AlertDescription>
+              </Alert>
+            )}
 
             <Box as="form" onSubmit={handleSubmit} w="100%">
               <VStack spacing={4}>
@@ -91,6 +164,7 @@ const RegisterPage = () => {
                     placeholder="your@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    isReadOnly={!!inviteInfo}
                   />
                 </FormControl>
 
@@ -105,13 +179,25 @@ const RegisterPage = () => {
                   />
                 </FormControl>
 
+                {!inviteInfo && (
+                  <FormControl isRequired>
+                    <FormLabel>Название компании</FormLabel>
+                    <Input
+                      type="text"
+                      placeholder="Моя Компания"
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                    />
+                  </FormControl>
+                )}
+
                 <Button
                   type="submit"
                   colorScheme="blue"
                   width="100%"
                   isLoading={loading}
                 >
-                  Зарегистрироваться
+                  {inviteInfo ? 'Принять приглашение' : 'Создать компанию'}
                 </Button>
               </VStack>
             </Box>

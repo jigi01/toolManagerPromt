@@ -1,15 +1,23 @@
 import prisma from '../utils/prisma.js';
 
-export const getAllUsers = async () => {
+export const getAllUsers = async (companyId) => {
   const users = await prisma.user.findMany({
+    where: { companyId },
     select: {
       id: true,
       email: true,
       name: true,
-      role: true,
       createdAt: true,
+      role: {
+        select: {
+          id: true,
+          name: true,
+          permissions: true,
+          isBoss: true
+        }
+      },
       _count: {
-        select: { toolsOwned: true }
+        select: { currentTools: true }
       }
     },
     orderBy: { createdAt: 'desc' }
@@ -18,16 +26,27 @@ export const getAllUsers = async () => {
   return users;
 };
 
-export const updateUserRole = async (userId, newRole) => {
-  if (!['ADMIN', 'EMPLOYEE'].includes(newRole)) {
-    throw new Error('Недопустимая роль.');
-  }
-
-  const user = await prisma.user.update({
-    where: { id: parseInt(userId) },
-    data: { role: newRole },
-    select: { id: true, email: true, name: true, role: true }
+export const deleteUser = async (userId, companyId) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      role: true
+    }
   });
 
-  return user;
+  if (!user) {
+    throw new Error('Пользователь не найден.');
+  }
+
+  if (user.companyId !== companyId) {
+    throw new Error('Этот пользователь не принадлежит вашей компании.');
+  }
+
+  if (user.role && user.role.isBoss) {
+    throw new Error('Нельзя удалить пользователя с ролью Босса.');
+  }
+
+  await prisma.user.delete({
+    where: { id: userId }
+  });
 };

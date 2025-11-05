@@ -1,18 +1,30 @@
 import { create } from 'zustand';
 import api from '../services/api';
 
-const useAuthStore = create((set) => ({
+const useAuthStore = create((set, get) => ({
   user: null,
   isAuthenticated: false,
-  isAdmin: false,
+  isBoss: false,
+  permissions: [],
   loading: true,
 
   setUser: (user) => set({
     user,
     isAuthenticated: !!user,
-    isAdmin: user?.role === 'ADMIN',
+    isBoss: user?.role?.isBoss || false,
+    permissions: user?.role?.permissions || [],
     loading: false
   }),
+
+  hasPermission: (permission) => {
+    const { permissions } = get();
+    return permissions.includes(permission);
+  },
+
+  hasAnyPermission: (permissionList) => {
+    const { permissions } = get();
+    return permissionList.some(p => permissions.includes(p));
+  },
 
   checkAuth: async () => {
     try {
@@ -20,7 +32,8 @@ const useAuthStore = create((set) => ({
       set({
         user: response.data.user,
         isAuthenticated: true,
-        isAdmin: response.data.user.role === 'ADMIN',
+        isBoss: response.data.user.role?.isBoss || false,
+        permissions: response.data.user.role?.permissions || [],
         loading: false
       });
       return true;
@@ -28,7 +41,8 @@ const useAuthStore = create((set) => ({
       set({
         user: null,
         isAuthenticated: false,
-        isAdmin: false,
+        isBoss: false,
+        permissions: [],
         loading: false
       });
       return false;
@@ -44,7 +58,8 @@ const useAuthStore = create((set) => ({
       set({
         user: null,
         isAuthenticated: false,
-        isAdmin: false
+        isBoss: false,
+        permissions: []
       });
     }
   }

@@ -7,13 +7,6 @@ import {
   useToast,
   Spinner,
   Center,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  Badge,
   Card,
   CardBody,
   HStack,
@@ -28,24 +21,40 @@ import {
   FormLabel,
   Input,
   Textarea,
-  IconButton,
   Select,
-  Text
+  Text,
+  SimpleGrid,
+  Switch,
+  FormHelperText
 } from '@chakra-ui/react';
-import { FiPlus, FiEdit2, FiTrash2, FiSend } from 'react-icons/fi';
-import { Link as RouterLink } from 'react-router-dom';
+import { FiPlus, FiGrid, FiList } from 'react-icons/fi';
 import api from '../services/api';
-import TransferToolModal from '../components/TransferToolModal';
+import useAuthStore from '../store/authStore';
+import ToolCard from '../components/ToolCard';
+import ToolTable from '../components/ToolTable';
 
 const ToolsPage = () => {
   const [tools, setTools] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [formData, setFormData] = useState({ name: '', serialNumber: '', description: '' });
-  const [selectedTool, setSelectedTool] = useState(null);
+  const [formData, setFormData] = useState({ 
+    name: '', 
+    serialNumber: '', 
+    description: '',
+    imageUrl: ''
+  });
   const [filterStatus, setFilterStatus] = useState('');
+  const [viewMode, setViewMode] = useState('grid');
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const { isOpen: isTransferOpen, onOpen: onTransferOpen, onClose: onTransferClose } = useDisclosure();
   const toast = useToast();
+  const { hasPermission } = useAuthStore();
+
+  const canCreate = hasPermission('TOOL_CREATE');
+  const canUpdate = hasPermission('TOOL_UPDATE');
+  const canDelete = hasPermission('TOOL_DELETE');
+  const canTransfer = hasPermission('TOOL_TRANSFER');
+  const canCheckin = hasPermission('TOOL_CHECKIN');
 
   useEffect(() => {
     fetchTools();
@@ -59,7 +68,7 @@ const ToolsPage = () => {
     } catch (error) {
       toast({
         title: 'Ошибка загрузки',
-        description: 'Не удалось загрузить инструменты',
+        description: error.response?.data?.error || 'Не удалось загрузить инструменты',
         status: 'error',
         duration: 3000,
         isClosable: true,
@@ -69,17 +78,49 @@ const ToolsPage = () => {
     }
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadImage = async (file) => {
+    // В реальном приложении здесь был бы запрос на сервер для загрузки файла
+    // Для демонстрации просто возвращаем data URL
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        resolve(reader.result);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleCreateTool = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/tools', formData);
+      let imageUrl = formData.imageUrl;
+      
+      if (imageFile) {
+        imageUrl = await uploadImage(imageFile);
+      }
+
+      await api.post('/tools', { ...formData, imageUrl });
       toast({
         title: 'Инструмент создан',
         status: 'success',
         duration: 3000,
         isClosable: true,
       });
-      setFormData({ name: '', serialNumber: '', description: '' });
+      setFormData({ name: '', serialNumber: '', description: '', imageUrl: '' });
+      setImageFile(null);
+      setImagePreview('');
       onClose();
       fetchTools();
     } catch (error) {
@@ -116,19 +157,46 @@ const ToolsPage = () => {
     }
   };
 
-  const handleTransferClick = (tool) => {
-    setSelectedTool(tool);
-    onTransferOpen();
+  const handleTransfer = async (toolId, toUserId) => {
+    try {
+      await api.post(`/tools/${toolId}/transfer`, { toUserId });
+      toast({
+        title: 'Инструмент передан',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+      fetchTools();
+    } catch (error) {
+      toast({
+        title: 'Ошибка передачи',
+        description: error.response?.data?.error || 'Не удалось передать инструмент',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    }
   };
 
-  const getStatusBadge = (status) => {
-    const statusMap = {
-      AVAILABLE: { text: 'На складе', color: 'green' },
-      IN_USE: { text: 'В использовании', color: 'blue' },
-      MAINTENANCE: { text: 'На обслуживании', color: 'orange' }
-    };
-    const { text, color } = statusMap[status] || { text: status, color: 'gray' };
-    return <Badge colorScheme={color}>{text}</Badge>;
+  const handleCheckin = async (toolId) => {
+    try {
+      await api.post(`/tools/${toolId}/checkin`);
+      toast({
+        title: 'Инструмент возвращен на склад',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+      fetchTools();
+    } catch (error) {
+      toast({
+        title: 'Ошибка',
+        description: error.response?.data?.error || 'Не удалось вернуть инструмент',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    }
   };
 
   if (loading) {
@@ -150,12 +218,14 @@ const ToolsPage = () => {
             Управление инвентарем компании
           </Text>
         </Box>
-        <Button leftIcon={<FiPlus />} colorScheme="blue" onClick={onOpen}>
-          Добавить Инструмент
-        </Button>
+        {canCreate && (
+          <Button leftIcon={<FiPlus />} colorScheme="blue" onClick={onOpen}>
+            Добавить Инструмент
+          </Button>
+        )}
       </HStack>
 
-      <HStack>
+      <HStack justify="space-between">
         <Select
           placeholder="Все статусы"
           value={filterStatus}
@@ -164,73 +234,71 @@ const ToolsPage = () => {
         >
           <option value="AVAILABLE">На складе</option>
           <option value="IN_USE">В использовании</option>
-          <option value="MAINTENANCE">На обслуживании</option>
         </Select>
+
+        <HStack>
+          <Button
+            leftIcon={<FiGrid />}
+            variant={viewMode === 'grid' ? 'solid' : 'ghost'}
+            onClick={() => setViewMode('grid')}
+            size="sm"
+          >
+            Карточки
+          </Button>
+          <Button
+            leftIcon={<FiList />}
+            variant={viewMode === 'table' ? 'solid' : 'ghost'}
+            onClick={() => setViewMode('table')}
+            size="sm"
+          >
+            Таблица
+          </Button>
+        </HStack>
       </HStack>
 
-      <Card>
-        <CardBody>
-          <Table variant="simple">
-            <Thead>
-              <Tr>
-                <Th>Название</Th>
-                <Th>Серийный номер</Th>
-                <Th>Статус</Th>
-                <Th>Владелец</Th>
-                <Th>Действия</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {tools.map((tool) => (
-                <Tr key={tool.id}>
-                  <Td fontWeight="medium">{tool.name}</Td>
-                  <Td>
-                    <Text fontFamily="mono" fontSize="sm">
-                      {tool.serialNumber}
-                    </Text>
-                  </Td>
-                  <Td>{getStatusBadge(tool.status)}</Td>
-                  <Td>
-                    {tool.currentOwner ? tool.currentOwner.name : '—'}
-                  </Td>
-                  <Td>
-                    <HStack spacing={2}>
-                      <Button
-                        as={RouterLink}
-                        to={`/tools/${tool.id}`}
-                        size="sm"
-                        variant="outline"
-                      >
-                        Детали
-                      </Button>
-                      {tool.status === 'AVAILABLE' && (
-                        <Button
-                          size="sm"
-                          leftIcon={<FiSend />}
-                          colorScheme="blue"
-                          variant="outline"
-                          onClick={() => handleTransferClick(tool)}
-                        >
-                          Выдать
-                        </Button>
-                      )}
-                      <IconButton
-                        icon={<FiTrash2 />}
-                        size="sm"
-                        colorScheme="red"
-                        variant="ghost"
-                        onClick={() => handleDeleteTool(tool.id)}
-                      />
-                    </HStack>
-                  </Td>
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
-        </CardBody>
-      </Card>
+      {viewMode === 'grid' ? (
+        <SimpleGrid columns={{ base: 1, md: 2, lg: 3, xl: 4 }} spacing={6}>
+          {tools.map((tool) => (
+            <ToolCard
+              key={tool.id}
+              tool={tool}
+              onDelete={canDelete ? handleDeleteTool : null}
+              onTransfer={canTransfer ? handleTransfer : null}
+              onCheckin={canCheckin ? handleCheckin : null}
+              canUpdate={canUpdate}
+            />
+          ))}
+        </SimpleGrid>
+      ) : (
+        <ToolTable
+          tools={tools}
+          onDelete={canDelete ? handleDeleteTool : null}
+          onTransfer={canTransfer ? handleTransfer : null}
+          onCheckin={canCheckin ? handleCheckin : null}
+          canUpdate={canUpdate}
+        />
+      )}
 
-      <Modal isOpen={isOpen} onClose={onClose}>
+      {tools.length === 0 && (
+        <Card>
+          <CardBody>
+            <Center py={10}>
+              <VStack spacing={3}>
+                <Text fontSize="lg" color="gray.500">
+                  Нет инструментов
+                </Text>
+                {canCreate && (
+                  <Button colorScheme="blue" onClick={onOpen}>
+                    Добавить первый инструмент
+                  </Button>
+                )}
+              </VStack>
+            </Center>
+          </CardBody>
+        </Card>
+      )}
+
+      <Modal isOpen={isOpen} onClose={onClose} size="lg">
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>Добавить Инструмент</ModalHeader>
@@ -265,6 +333,41 @@ const ToolsPage = () => {
                   />
                 </FormControl>
 
+                <FormControl>
+                  <FormLabel>Изображение</FormLabel>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    pt={1}
+                  />
+                  <FormHelperText>
+                    Или введите URL изображения:
+                  </FormHelperText>
+                  <Input
+                    placeholder="https://example.com/image.jpg"
+                    value={formData.imageUrl}
+                    onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                    mt={2}
+                  />
+                </FormControl>
+
+                {(imagePreview || formData.imageUrl) && (
+                  <Box w="100%">
+                    <Text fontSize="sm" mb={2}>Предпросмотр:</Text>
+                    <Box
+                      as="img"
+                      src={imagePreview || formData.imageUrl}
+                      alt="Preview"
+                      maxH="200px"
+                      objectFit="contain"
+                      borderRadius="md"
+                      border="1px solid"
+                      borderColor="gray.200"
+                    />
+                  </Box>
+                )}
+
                 <Button type="submit" colorScheme="blue" width="100%">
                   Создать
                 </Button>
@@ -273,18 +376,6 @@ const ToolsPage = () => {
           </ModalBody>
         </ModalContent>
       </Modal>
-
-      {selectedTool && (
-        <TransferToolModal
-          isOpen={isTransferOpen}
-          onClose={onTransferClose}
-          tool={selectedTool}
-          onSuccess={() => {
-            fetchTools();
-            onTransferClose();
-          }}
-        />
-      )}
     </VStack>
   );
 };

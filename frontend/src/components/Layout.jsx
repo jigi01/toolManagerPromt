@@ -1,10 +1,10 @@
 import { Box, Flex, Button, Text, Container, useColorModeValue, HStack, Menu, MenuButton, MenuList, MenuItem, Avatar } from '@chakra-ui/react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiLogOut, FiTool, FiUsers, FiHome } from 'react-icons/fi';
+import { FiLogOut, FiTool, FiUsers, FiHome, FiShield } from 'react-icons/fi';
 import useAuthStore from '../store/authStore';
 
 const Layout = ({ children }) => {
-  const { user, isAdmin, logout } = useAuthStore();
+  const { user, isBoss, hasPermission, logout } = useAuthStore();
   const navigate = useNavigate();
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
@@ -33,27 +33,38 @@ const Layout = ({ children }) => {
                 >
                   Главная
                 </Button>
-                {isAdmin && (
-                  <>
-                    <Button
-                      as={Link}
-                      to="/tools"
-                      leftIcon={<FiTool />}
-                      variant="ghost"
-                      size="sm"
-                    >
-                      Инструменты
-                    </Button>
-                    <Button
-                      as={Link}
-                      to="/users"
-                      leftIcon={<FiUsers />}
-                      variant="ghost"
-                      size="sm"
-                    >
-                      Сотрудники
-                    </Button>
-                  </>
+                {hasPermission('TOOL_READ') && (
+                  <Button
+                    as={Link}
+                    to="/tools"
+                    leftIcon={<FiTool />}
+                    variant="ghost"
+                    size="sm"
+                  >
+                    Инструменты
+                  </Button>
+                )}
+                {hasPermission('USER_READ') && (
+                  <Button
+                    as={Link}
+                    to="/users"
+                    leftIcon={<FiUsers />}
+                    variant="ghost"
+                    size="sm"
+                  >
+                    Сотрудники
+                  </Button>
+                )}
+                {isBoss && (
+                  <Button
+                    as={Link}
+                    to="/roles"
+                    leftIcon={<FiShield />}
+                    variant="ghost"
+                    size="sm"
+                  >
+                    Роли
+                  </Button>
                 )}
               </HStack>
             </HStack>
@@ -67,7 +78,7 @@ const Layout = ({ children }) => {
                       {user?.name}
                     </Text>
                     <Text fontSize="xs" color="gray.500">
-                      {isAdmin ? 'Администратор' : 'Сотрудник'}
+                      {user?.role?.name || 'Сотрудник'}
                     </Text>
                   </Box>
                 </HStack>

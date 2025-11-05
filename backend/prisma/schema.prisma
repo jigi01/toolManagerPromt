@@ -10,70 +10,146 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Перечисление ролей пользователей
-enum Role {
-  EMPLOYEE // Обычный сотрудник
-  ADMIN    // Босс / Администратор
+// Enum для гранулярных прав доступа
+enum Permission {
+  // Управление пользователями
+  USER_INVITE       // Приглашать пользователей
+  USER_DELETE       // Удалять пользователей
+  USER_READ         // Видеть список пользователей
+  USER_ASSIGN_ROLE  // Назначать роли
+
+  // Управление ролями (только для Босса)
+  ROLE_MANAGE       // Создавать, редактировать, удалять роли
+
+  // Управление инструментами
+  TOOL_CREATE       // Создавать инструмент
+  TOOL_UPDATE       // Редактировать инфо об инструменте (вкл. фото)
+  TOOL_DELETE       // Удалять инструмент
+  TOOL_READ         // Видеть список инструментов
+
+  // Прием-Передача
+  TOOL_TRANSFER     // Передавать инструмент другому сотруднику
+  TOOL_CHECKIN      // Принимать инструмент "на склад" (возврат)
+}
+
+// Модель компании (для изоляции пользователей и инструментов)
+model Company {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  users       User[]
+  tools       Tool[]
+  roles       Role[]
+  invitations Invitation[]
+}
+
+// Модель роли (кастомная, управляемая)
+model Role {
+  id          String       @id @default(cuid())
+  name        String
+  companyId   String
+  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  // Массив прав доступа
+  permissions Permission[]
+  
+  users       User[]
+  invitations Invitation[]
+  isBoss      Boolean      @default(false) // Специальный флаг для роли "Босса"
+  createdAt   DateTime     @default(now())
+
+  @@unique([companyId, name])
 }
 
 // Модель пользователя (сотрудника)
 model User {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(cuid())
   email     String   @unique // Логин
   password  String   // Хэшированный пароль
   name      String
-  role      Role     @default(EMPLOYEE)
   createdAt DateTime @default(now())
 
-  // Инструменты, которые сейчас у пользователя
-  toolsOwned Tool[] @relation("ToolOwner")
+  // Привязка к компании
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  // Записи в истории, где он был "от кого"
-  historyFrom ToolHistory[] @relation("FromUser")
-  // Записи в истории, где он был "кому"
-  historyTo   ToolHistory[] @relation("ToUser")
+  // Привязка к роли
+  roleId    String?
+  role      Role?   @relation(fields: [roleId], references: [id], onDelete: SetNull)
+
+  // Инструменты, которые сейчас у пользователя
+  currentTools    Tool[]        @relation("CurrentToolUser")
+
+  // История действий с инструментами
+  historyActions  ToolHistory[] @relation("HistoryActor")
+  historyFrom     ToolHistory[] @relation("HistoryFromUser")
+  historyTo       ToolHistory[] @relation("HistoryToUser")
 }
 
-// Перечисление статусов инструмента
-enum ToolStatus {
-  AVAILABLE   // На складе (доступен)
-  IN_USE      // В использовании (у сотрудника)
-  MAINTENANCE // На обслуживании
+// Модель приглашений сотрудников
+model Invitation {
+  id        String   @id @default(cuid())
+  token     String   @unique // Уникальный токен приглашения
+  email     String   // Email приглашенного сотрудника
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  roleId    String?  // Роль, которая будет назначена при регистрации (опционально)
+  role      Role?    @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  
+  expiresAt DateTime // Срок действия приглашения
+  usedAt    DateTime? // Когда было использовано (null = не использовано)
+  createdAt DateTime @default(now())
 }
 
 // Модель инструмента
 model Tool {
-  id           Int        @id @default(autoincrement())
-  name         String     // Название (н.п. "Дрель Makita XF-200")
-  serialNumber String     @unique // Серийный номер
+  id           String   @id @default(cuid())
+  name         String   // Название (н.п. "Дрель Makita XF-200")
+  serialNumber String   // Серийный номер
   description  String?
-  status       ToolStatus @default(AVAILABLE)
-  createdAt    DateTime   @default(now())
+  imageUrl     String?  // URL изображения инструмента
+  status       String   @default("AVAILABLE") // "AVAILABLE" (на складе), "IN_USE" (у сотрудника)
+  createdAt    DateTime @default(now())
 
-  // Текущий владелец
-  currentOwnerId Int?
-  currentOwner   User? @relation("ToolOwner", fields: [currentOwnerId], references: [id])
+  // Привязка к компании
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  // Текущий владелец (null = на складе)
+  currentUserId String?
+  currentUser   User?   @relation("CurrentToolUser", fields: [currentUserId], references: [id], onDelete: SetNull)
 
   // История перемещений
   history ToolHistory[]
+
+  @@unique([companyId, serialNumber])
 }
 
-// Модель для отслеживания истории перемещений
+// Модель для отслеживания истории перемещений инструментов
 model ToolHistory {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(cuid())
   timestamp DateTime @default(now())
 
-  toolId Int
-  tool   Tool @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  toolId String
+  tool   Tool   @relation(fields: [toolId], references: [id], onDelete: Cascade)
 
-  // Кто передал (может быть null, если инструмент взят со склада)
-  fromUserId Int?
-  fromUser   User? @relation("FromUser", fields: [fromUserId], references: [id])
+  // Кто инициировал действие
+  actorId String
+  actor   User   @relation("HistoryActor", fields: [actorId], references: [id])
 
-  // Кому передали
-  toUserId Int?
-  toUser   User? @relation("ToUser", fields: [toUserId], references: [id])
+  // Тип действия: "TRANSFER" (передача), "CHECK_IN" (возврат на склад)
+  action  String
 
-  // Примечание (например, "Передано на обслуживание")
+  // Кто был предыдущим владельцем (если был)
+  fromUserId String?
+  fromUser   User?   @relation("HistoryFromUser", fields: [fromUserId], references: [id])
+
+  // Кто стал новым владельцем (если стал)
+  toUserId String?
+  toUser   User?   @relation("HistoryToUser", fields: [toUserId], references: [id])
+
+  // Примечание (опционально)
   notes String?
 }

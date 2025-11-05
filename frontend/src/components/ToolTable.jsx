@@ -113,7 +113,7 @@ const ToolTable = ({ tools, onDelete, onTransfer, onCheckin, canUpdate, onEdit }
                         />
                       )}
                       
-                      {tool.status === 'AVAILABLE' && onTransfer && (
+                      {onTransfer && (
                         <Button
                           size="sm"
                           leftIcon={<FiSend />}
@@ -121,7 +121,7 @@ const ToolTable = ({ tools, onDelete, onTransfer, onCheckin, canUpdate, onEdit }
                           variant="outline"
                           onClick={() => handleTransferClick(tool)}
                         >
-                          Выдать
+                          {tool.status === 'AVAILABLE' ? 'Выдать' : 'Передать'}
                         </Button>
                       )}
                       

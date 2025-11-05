@@ -142,7 +142,7 @@ const ToolCard = ({ tool, onDelete, onTransfer, onCheckin, canUpdate, onEdit }) 
                 Детали
               </Button>
               
-              {tool.status === 'AVAILABLE' && onTransfer && (
+              {onTransfer && (
                 <Button
                   size="sm"
                   leftIcon={<FiSend />}
@@ -150,7 +150,7 @@ const ToolCard = ({ tool, onDelete, onTransfer, onCheckin, canUpdate, onEdit }) 
                   onClick={handleTransferClick}
                   flex={1}
                 >
-                  Выдать
+                  {tool.status === 'AVAILABLE' ? 'Выдать' : 'Передать'}
                 </Button>
               )}
               

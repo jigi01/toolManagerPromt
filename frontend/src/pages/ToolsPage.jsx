@@ -388,20 +388,20 @@ const ToolsPage = () => {
                 </Button>
               </VStack>
             </form>
-            </ModalBody>
-            </ModalContent>
-            </Modal>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
 
-            {editingTool && (
-            <EditToolModal
-            isOpen={isEditOpen}
-            onClose={onEditClose}
-            tool={editingTool}
-            onSuccess={handleEditSuccess}
-            />
-            )}
-            </VStack>
-            );
-            };
+      {editingTool && (
+        <EditToolModal
+          isOpen={isEditOpen}
+          onClose={onEditClose}
+          tool={editingTool}
+          onSuccess={handleEditSuccess}
+        />
+      )}
+    </VStack>
+  );
+};
 
-            export default ToolsPage;
+export default ToolsPage;

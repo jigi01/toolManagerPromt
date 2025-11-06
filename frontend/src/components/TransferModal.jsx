@@ -21,7 +21,10 @@ import api from '../services/api';
 
 const TransferModal = ({ isOpen, onClose, tool, onSuccess }) => {
   const [users, setUsers] = useState([]);
+  const [warehouses, setWarehouses] = useState([]);
+  const [transferType, setTransferType] = useState('user'); // 'user' или 'warehouse'
   const [selectedUserId, setSelectedUserId] = useState('');
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const toast = useToast();
@@ -29,6 +32,7 @@ const TransferModal = ({ isOpen, onClose, tool, onSuccess }) => {
   useEffect(() => {
     if (isOpen) {
       fetchUsers();
+      fetchWarehouses();
     }
   }, [isOpen]);
 
@@ -49,8 +53,17 @@ const TransferModal = ({ isOpen, onClose, tool, onSuccess }) => {
     }
   };
 
+  const fetchWarehouses = async () => {
+    try {
+      const response = await api.get('/warehouses');
+      setWarehouses(response.data.warehouses);
+    } catch (error) {
+      console.error('Не удалось загрузить склады:', error);
+    }
+  };
+
   const handleSubmit = async () => {
-    if (!selectedUserId) {
+    if (transferType === 'user' && !selectedUserId) {
       toast({
         title: 'Ошибка',
         description: 'Выберите получателя',
@@ -61,14 +74,31 @@ const TransferModal = ({ isOpen, onClose, tool, onSuccess }) => {
       return;
     }
 
+    if (transferType === 'warehouse' && !selectedWarehouseId) {
+      toast({
+        title: 'Ошибка',
+        description: 'Выберите склад',
+        status: 'warning',
+        duration: 3000,
+        isClosable: true
+      });
+      return;
+    }
+
     setSubmitting(true);
-    onSuccess(selectedUserId);
+    if (transferType === 'user') {
+      onSuccess(selectedUserId, null);
+    } else {
+      onSuccess(null, selectedWarehouseId);
+    }
     setSubmitting(false);
     handleClose();
   };
 
   const handleClose = () => {
     setSelectedUserId('');
+    setSelectedWarehouseId('');
+    setTransferType('user');
     setLoading(true);
     onClose();
   };
@@ -94,19 +124,51 @@ const TransferModal = ({ isOpen, onClose, tool, onSuccess }) => {
               </Text>
 
               <FormControl isRequired>
-                <FormLabel>Выберите получателя</FormLabel>
+                <FormLabel>Куда передать?</FormLabel>
                 <Select
-                  placeholder="Выберите сотрудника"
-                  value={selectedUserId}
-                  onChange={(e) => setSelectedUserId(e.target.value)}
+                  value={transferType}
+                  onChange={(e) => {
+                    setTransferType(e.target.value);
+                    setSelectedUserId('');
+                    setSelectedWarehouseId('');
+                  }}
                 >
-                  {users.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.name} ({user.email})
-                    </option>
-                  ))}
+                  <option value="user">Сотруднику</option>
+                  <option value="warehouse">На склад</option>
                 </Select>
               </FormControl>
+
+              {transferType === 'user' ? (
+                <FormControl isRequired>
+                  <FormLabel>Выберите получателя</FormLabel>
+                  <Select
+                    placeholder="Выберите сотрудника"
+                    value={selectedUserId}
+                    onChange={(e) => setSelectedUserId(e.target.value)}
+                  >
+                    {users.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.name} ({user.email})
+                      </option>
+                    ))}
+                  </Select>
+                </FormControl>
+              ) : (
+                <FormControl isRequired>
+                  <FormLabel>Выберите склад</FormLabel>
+                  <Select
+                    placeholder="Выберите склад"
+                    value={selectedWarehouseId}
+                    onChange={(e) => setSelectedWarehouseId(e.target.value)}
+                  >
+                    {warehouses.map((warehouse) => (
+                      <option key={warehouse.id} value={warehouse.id}>
+                        {warehouse.name} {warehouse.isDefault && '(По умолчанию)'}
+                      </option>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
             </VStack>
           )}
         </ModalBody>
@@ -118,7 +180,7 @@ const TransferModal = ({ isOpen, onClose, tool, onSuccess }) => {
             colorScheme="blue" 
             onClick={handleSubmit}
             isLoading={submitting}
-            isDisabled={loading || !selectedUserId}
+            isDisabled={loading || (transferType === 'user' ? !selectedUserId : !selectedWarehouseId)}
           >
             Передать
           </Button>

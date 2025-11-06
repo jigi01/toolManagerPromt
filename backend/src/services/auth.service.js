@@ -14,7 +14,11 @@ const ALL_PERMISSIONS = [
   'TOOL_DELETE',
   'TOOL_READ',
   'TOOL_TRANSFER',
-  'TOOL_CHECKIN'
+  'TOOL_CHECKIN',
+  'WAREHOUSE_CREATE',
+  'WAREHOUSE_UPDATE',
+  'WAREHOUSE_DELETE',
+  'WAREHOUSE_READ'
 ];
 
 export const registerUser = async (name, email, password, companyName = null, inviteToken = null) => {
@@ -91,10 +95,19 @@ export const registerUser = async (name, email, password, companyName = null, in
       throw new Error('Необходимо указать название компании.');
     }
 
-    // Создаем компанию, роль Босса и первого пользователя
+    // Создаем компанию, роль Босса, дефолтный склад и первого пользователя
     user = await prisma.$transaction(async (tx) => {
       const company = await tx.company.create({
         data: { name: companyName }
+      });
+
+      // Создаем дефолтный склад
+      await tx.warehouse.create({
+        data: {
+          name: 'Основной склад',
+          companyId: company.id,
+          isDefault: true
+        }
       });
 
       const bossRole = await tx.role.create({

@@ -1,6 +1,6 @@
 import { Box, Flex, Button, Text, Container, useColorModeValue, HStack, Menu, MenuButton, MenuList, MenuItem, Avatar } from '@chakra-ui/react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiLogOut, FiTool, FiUsers, FiHome, FiShield } from 'react-icons/fi';
+import { FiLogOut, FiTool, FiUsers, FiHome, FiShield, FiPackage } from 'react-icons/fi';
 import useAuthStore from '../store/authStore';
 
 const Layout = ({ children }) => {
@@ -53,6 +53,17 @@ const Layout = ({ children }) => {
                     size="sm"
                   >
                     Сотрудники
+                  </Button>
+                )}
+                {hasPermission('WAREHOUSE_READ') && (
+                  <Button
+                    as={Link}
+                    to="/warehouses"
+                    leftIcon={<FiPackage />}
+                    variant="ghost"
+                    size="sm"
+                  >
+                    Склады
                   </Button>
                 )}
                 {isBoss && (

@@ -36,12 +36,14 @@ import EditToolModal from '../components/EditToolModal';
 
 const ToolsPage = () => {
   const [tools, setTools] = useState([]);
+  const [warehouses, setWarehouses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({ 
     name: '', 
     serialNumber: '', 
     description: '',
-    imageUrl: ''
+    imageUrl: '',
+    warehouseId: ''
   });
   const [filterStatus, setFilterStatus] = useState('');
   const [viewMode, setViewMode] = useState('grid');
@@ -61,6 +63,7 @@ const ToolsPage = () => {
 
   useEffect(() => {
     fetchTools();
+    fetchWarehouses();
   }, [filterStatus]);
 
   const fetchTools = async () => {
@@ -78,6 +81,15 @@ const ToolsPage = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchWarehouses = async () => {
+    try {
+      const response = await api.get('/warehouses');
+      setWarehouses(response.data.warehouses);
+    } catch (error) {
+      console.error('Не удалось загрузить склады:', error);
     }
   };
 
@@ -121,7 +133,7 @@ const ToolsPage = () => {
         duration: 3000,
         isClosable: true,
       });
-      setFormData({ name: '', serialNumber: '', description: '', imageUrl: '' });
+      setFormData({ name: '', serialNumber: '', description: '', imageUrl: '', warehouseId: '' });
       setImageFile(null);
       setImagePreview('');
       onClose();
@@ -160,9 +172,13 @@ const ToolsPage = () => {
     }
   };
 
-  const handleTransfer = async (toolId, toUserId) => {
+  const handleTransfer = async (toolId, toUserId, toWarehouseId) => {
     try {
-      await api.post(`/tools/${toolId}/transfer`, { toUserId });
+      const payload = {};
+      if (toUserId) payload.toUserId = toUserId;
+      if (toWarehouseId) payload.toWarehouseId = toWarehouseId;
+      
+      await api.post(`/tools/${toolId}/transfer`, payload);
       toast({
         title: 'Инструмент передан',
         status: 'success',
@@ -348,6 +364,21 @@ const ToolsPage = () => {
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   />
+                </FormControl>
+
+                <FormControl>
+                  <FormLabel>Склад</FormLabel>
+                  <Select
+                    placeholder="Выберите склад (по умолчанию - основной)"
+                    value={formData.warehouseId}
+                    onChange={(e) => setFormData({ ...formData, warehouseId: e.target.value })}
+                  >
+                    {warehouses.map((warehouse) => (
+                      <option key={warehouse.id} value={warehouse.id}>
+                        {warehouse.name} {warehouse.isDefault && '(По умолчанию)'}
+                      </option>
+                    ))}
+                  </Select>
                 </FormControl>
 
                 <FormControl>

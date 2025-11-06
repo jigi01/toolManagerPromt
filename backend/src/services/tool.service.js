@@ -1,6 +1,6 @@
 import prisma from '../utils/prisma.js';
 
-export const createTool = async (name, serialNumber, description, companyId, imageUrl = null) => {
+export const createTool = async (name, serialNumber, description, companyId, imageUrl = null, warehouseId = null) => {
   const existingTool = await prisma.tool.findUnique({
     where: {
       companyId_serialNumber: {
@@ -14,6 +14,33 @@ export const createTool = async (name, serialNumber, description, companyId, ima
     throw new Error('Инструмент с таким серийным номером уже существует в вашей компании.');
   }
 
+  // Если warehouseId не указан, используем дефолтный склад
+  let targetWarehouseId = warehouseId;
+  if (!targetWarehouseId) {
+    const defaultWarehouse = await prisma.warehouse.findFirst({
+      where: { companyId, isDefault: true }
+    });
+    
+    if (defaultWarehouse) {
+      targetWarehouseId = defaultWarehouse.id;
+    }
+  }
+
+  // Проверяем, что склад существует и принадлежит компании
+  if (targetWarehouseId) {
+    const warehouse = await prisma.warehouse.findUnique({
+      where: { id: targetWarehouseId }
+    });
+
+    if (!warehouse) {
+      throw new Error('Указанный склад не найден.');
+    }
+
+    if (warehouse.companyId !== companyId) {
+      throw new Error('Указанный склад не принадлежит вашей компании.');
+    }
+  }
+
   const tool = await prisma.tool.create({
     data: {
       name,
@@ -21,6 +48,7 @@ export const createTool = async (name, serialNumber, description, companyId, ima
       description,
       imageUrl,
       companyId,
+      warehouseId: targetWarehouseId,
       status: 'AVAILABLE'
     }
   });
@@ -39,11 +67,18 @@ export const getAllTools = async (companyId, filters = {}) => {
     where.currentUserId = filters.currentUserId;
   }
 
+  if (filters.warehouseId) {
+    where.warehouseId = filters.warehouseId;
+  }
+
   const tools = await prisma.tool.findMany({
     where,
     include: {
       currentUser: {
         select: { id: true, name: true, email: true }
+      },
+      warehouse: {
+        select: { id: true, name: true }
       }
     },
     orderBy: { createdAt: 'desc' }
@@ -59,6 +94,9 @@ export const getToolById = async (toolId, companyId) => {
       currentUser: {
         select: { id: true, name: true, email: true }
       },
+      warehouse: {
+        select: { id: true, name: true }
+      },
       history: {
         include: {
           actor: {
@@ -69,6 +107,12 @@ export const getToolById = async (toolId, companyId) => {
           },
           toUser: {
             select: { id: true, name: true, email: true }
+          },
+          fromWarehouse: {
+            select: { id: true, name: true }
+          },
+          toWarehouse: {
+            select: { id: true, name: true }
           }
         },
         orderBy: { timestamp: 'desc' }
@@ -106,6 +150,9 @@ export const updateTool = async (toolId, companyId, updates) => {
     include: {
       currentUser: {
         select: { id: true, name: true, email: true }
+      },
+      warehouse: {
+        select: { id: true, name: true }
       }
     }
   });
@@ -131,8 +178,8 @@ export const deleteTool = async (toolId, companyId) => {
   });
 };
 
-// Передача инструмента от одного пользователя другому (или со склада пользователю)
-export const transferTool = async (toolId, toUserId, actorId, companyId) => {
+// Передача инструмента от одного пользователя другому (или со склада пользователю, или на склад)
+export const transferTool = async (toolId, toUserId, actorId, companyId, toWarehouseId = null) => {
   return await prisma.$transaction(async (tx) => {
     // Получаем инструмент
     const tool = await tx.tool.findUnique({
@@ -147,31 +194,75 @@ export const transferTool = async (toolId, toUserId, actorId, companyId) => {
       throw new Error('Этот инструмент не принадлежит вашей компании.');
     }
 
-    // Проверяем, что целевой пользователь существует и из той же компании
-    const toUser = await tx.user.findUnique({
-      where: { id: toUserId }
-    });
-
-    if (!toUser) {
-      throw new Error('Целевой пользователь не найден.');
+    // Должен быть указан либо toUserId, либо toWarehouseId
+    if (!toUserId && !toWarehouseId) {
+      throw new Error('Необходимо указать получателя или склад назначения.');
     }
 
-    if (toUser.companyId !== companyId) {
-      throw new Error('Целевой пользователь не принадлежит вашей компании.');
+    // Нельзя передать и пользователю и на склад одновременно
+    if (toUserId && toWarehouseId) {
+      throw new Error('Нельзя передать инструмент одновременно пользователю и на склад.');
     }
 
     const fromUserId = tool.currentUserId;
+    const fromWarehouseId = tool.warehouseId;
+
+    let updatedData = {};
+
+    // Если передаем пользователю
+    if (toUserId) {
+      // Проверяем, что целевой пользователь существует и из той же компании
+      const toUser = await tx.user.findUnique({
+        where: { id: toUserId }
+      });
+
+      if (!toUser) {
+        throw new Error('Целевой пользователь не найден.');
+      }
+
+      if (toUser.companyId !== companyId) {
+        throw new Error('Целевой пользователь не принадлежит вашей компании.');
+      }
+
+      updatedData = {
+        currentUserId: toUserId,
+        warehouseId: null,
+        status: 'IN_USE'
+      };
+    }
+
+    // Если передаем на склад
+    if (toWarehouseId) {
+      // Проверяем, что склад существует и принадлежит компании
+      const toWarehouse = await tx.warehouse.findUnique({
+        where: { id: toWarehouseId }
+      });
+
+      if (!toWarehouse) {
+        throw new Error('Целевой склад не найден.');
+      }
+
+      if (toWarehouse.companyId !== companyId) {
+        throw new Error('Целевой склад не принадлежит вашей компании.');
+      }
+
+      updatedData = {
+        currentUserId: null,
+        warehouseId: toWarehouseId,
+        status: 'AVAILABLE'
+      };
+    }
 
     // Обновляем инструмент
     const updatedTool = await tx.tool.update({
       where: { id: toolId },
-      data: {
-        currentUserId: toUserId,
-        status: 'IN_USE'
-      },
+      data: updatedData,
       include: {
         currentUser: {
           select: { id: true, name: true, email: true }
+        },
+        warehouse: {
+          select: { id: true, name: true }
         }
       }
     });
@@ -183,7 +274,9 @@ export const transferTool = async (toolId, toUserId, actorId, companyId) => {
         actorId,
         action: 'TRANSFER',
         fromUserId,
-        toUserId
+        toUserId: toUserId || null,
+        fromWarehouseId,
+        toWarehouseId: toWarehouseId || null
       }
     });
 
@@ -192,7 +285,7 @@ export const transferTool = async (toolId, toUserId, actorId, companyId) => {
 };
 
 // Возврат инструмента на склад
-export const checkinTool = async (toolId, actorId, companyId) => {
+export const checkinTool = async (toolId, actorId, companyId, warehouseId = null) => {
   return await prisma.$transaction(async (tx) => {
     // Получаем инструмент
     const tool = await tx.tool.findUnique({
@@ -213,16 +306,47 @@ export const checkinTool = async (toolId, actorId, companyId) => {
 
     const fromUserId = tool.currentUserId;
 
+    // Если склад не указан, используем дефолтный
+    let targetWarehouseId = warehouseId;
+    if (!targetWarehouseId) {
+      const defaultWarehouse = await tx.warehouse.findFirst({
+        where: { companyId, isDefault: true }
+      });
+      
+      if (defaultWarehouse) {
+        targetWarehouseId = defaultWarehouse.id;
+      }
+    }
+
+    // Проверяем, что склад существует и принадлежит компании
+    if (targetWarehouseId) {
+      const warehouse = await tx.warehouse.findUnique({
+        where: { id: targetWarehouseId }
+      });
+
+      if (!warehouse) {
+        throw new Error('Указанный склад не найден.');
+      }
+
+      if (warehouse.companyId !== companyId) {
+        throw new Error('Указанный склад не принадлежит вашей компании.');
+      }
+    }
+
     // Обновляем инструмент
     const updatedTool = await tx.tool.update({
       where: { id: toolId },
       data: {
         currentUserId: null,
+        warehouseId: targetWarehouseId,
         status: 'AVAILABLE'
       },
       include: {
         currentUser: {
           select: { id: true, name: true, email: true }
+        },
+        warehouse: {
+          select: { id: true, name: true }
         }
       }
     });
@@ -234,7 +358,9 @@ export const checkinTool = async (toolId, actorId, companyId) => {
         actorId,
         action: 'CHECK_IN',
         fromUserId,
-        toUserId: null
+        toUserId: null,
+        fromWarehouseId: null,
+        toWarehouseId: targetWarehouseId
       }
     });
 

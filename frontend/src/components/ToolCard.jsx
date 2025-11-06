@@ -129,9 +129,14 @@ const ToolCard = ({ tool, onDelete, onTransfer, onCheckin, canUpdate, onEdit, cu
                 </Text>
               </Box>
             ) : (
-              <Text fontSize="sm" color="gray.500">
-                Доступен на складе
-              </Text>
+              <Box>
+                <Text fontSize="sm" color="gray.600">
+                  Склад:
+                </Text>
+                <Text fontSize="sm" fontWeight="medium">
+                  {tool.warehouse?.name || 'Не указан'}
+                </Text>
+              </Box>
             )}
 
             {tool.description && (

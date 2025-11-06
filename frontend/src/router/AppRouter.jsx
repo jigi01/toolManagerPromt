@@ -12,6 +12,7 @@ import ToolsPage from '../pages/ToolsPage';
 import ToolDetailsPage from '../pages/ToolDetailsPage';
 import UsersPage from '../pages/UsersPage';
 import RolesPage from '../pages/RolesPage';
+import WarehousesPage from '../pages/WarehousesPage';
 import useAuthStore from '../store/authStore';
 
 const HomePage = () => {
@@ -83,6 +84,19 @@ const AppRouter = () => {
                   <RolesPage />
                 </Layout>
               </BossRoute>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/warehouses"
+          element={
+            <ProtectedRoute>
+              <PermissionRoute permission="WAREHOUSE_READ">
+                <Layout>
+                  <WarehousesPage />
+                </Layout>
+              </PermissionRoute>
             </ProtectedRoute>
           }
         />

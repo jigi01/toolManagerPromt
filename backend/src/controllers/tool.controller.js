@@ -8,13 +8,14 @@ export const createTool = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { name, serialNumber, description, imageUrl } = req.body;
+    const { name, serialNumber, description, imageUrl, warehouseId } = req.body;
     const tool = await toolService.createTool(
       name,
       serialNumber,
       description,
       req.user.companyId,
-      imageUrl
+      imageUrl,
+      warehouseId
     );
 
     res.status(201).json({ tool });
@@ -25,8 +26,8 @@ export const createTool = async (req, res) => {
 
 export const getTools = async (req, res) => {
   try {
-    const { status, currentUserId } = req.query;
-    const tools = await toolService.getAllTools(req.user.companyId, { status, currentUserId });
+    const { status, currentUserId, warehouseId } = req.query;
+    const tools = await toolService.getAllTools(req.user.companyId, { status, currentUserId, warehouseId });
 
     res.json({ tools });
   } catch (error) {
@@ -71,17 +72,18 @@ export const deleteTool = async (req, res) => {
 export const transferTool = async (req, res) => {
   try {
     const { id } = req.params;
-    const { toUserId } = req.body;
+    const { toUserId, toWarehouseId } = req.body;
 
-    if (!toUserId) {
-      return res.status(400).json({ error: 'Необходимо указать ID получателя.' });
+    if (!toUserId && !toWarehouseId) {
+      return res.status(400).json({ error: 'Необходимо указать ID получателя или ID склада.' });
     }
 
     const tool = await toolService.transferTool(
       id,
       toUserId,
       req.user.id,
-      req.user.companyId
+      req.user.companyId,
+      toWarehouseId
     );
 
     res.json({ tool });
@@ -93,11 +95,13 @@ export const transferTool = async (req, res) => {
 export const checkinTool = async (req, res) => {
   try {
     const { id } = req.params;
+    const { warehouseId } = req.body;
 
     const tool = await toolService.checkinTool(
       id,
       req.user.id,
-      req.user.companyId
+      req.user.companyId,
+      warehouseId
     );
 
     res.json({ tool });

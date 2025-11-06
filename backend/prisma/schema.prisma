@@ -30,6 +30,12 @@ enum Permission {
   // Прием-Передача
   TOOL_TRANSFER     // Передавать инструмент другому сотруднику
   TOOL_CHECKIN      // Принимать инструмент "на склад" (возврат)
+
+  // Управление складами
+  WAREHOUSE_CREATE  // Создавать склад
+  WAREHOUSE_UPDATE  // Редактировать склад
+  WAREHOUSE_DELETE  // Удалять склад
+  WAREHOUSE_READ    // Видеть список складов
 }
 
 // Модель компании (для изоляции пользователей и инструментов)
@@ -42,6 +48,7 @@ model Company {
   tools       Tool[]
   roles       Role[]
   invitations Invitation[]
+  warehouses  Warehouse[]
 }
 
 // Модель роли (кастомная, управляемая)
@@ -103,6 +110,23 @@ model Invitation {
   createdAt DateTime @default(now())
 }
 
+// Модель склада
+model Warehouse {
+  id        String   @id @default(cuid())
+  name      String
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  isDefault Boolean  @default(false) // Флаг дефолтного склада
+  createdAt DateTime @default(now())
+
+  tools     Tool[]
+  historyFrom ToolHistory[] @relation("HistoryFromWarehouse")
+  historyTo   ToolHistory[] @relation("HistoryToWarehouse")
+
+  @@unique([companyId, name])
+}
+
 // Модель инструмента
 model Tool {
   id           String   @id @default(cuid())
@@ -120,6 +144,10 @@ model Tool {
   // Текущий владелец (null = на складе)
   currentUserId String?
   currentUser   User?   @relation("CurrentToolUser", fields: [currentUserId], references: [id], onDelete: SetNull)
+
+  // Склад, на котором находится инструмент (если не у пользователя)
+  warehouseId String?
+  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
 
   // История перемещений
   history ToolHistory[]
@@ -149,6 +177,14 @@ model ToolHistory {
   // Кто стал новым владельцем (если стал)
   toUserId String?
   toUser   User?   @relation("HistoryToUser", fields: [toUserId], references: [id])
+
+  // Склад, откуда был взят инструмент
+  fromWarehouseId String?
+  fromWarehouse   Warehouse? @relation("HistoryFromWarehouse", fields: [fromWarehouseId], references: [id])
+
+  // Склад, куда был передан инструмент
+  toWarehouseId String?
+  toWarehouse   Warehouse? @relation("HistoryToWarehouse", fields: [toWarehouseId], references: [id])
 
   // Примечание (опционально)
   notes String?

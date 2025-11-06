@@ -28,24 +28,50 @@ import {
   Input,
   Checkbox,
   Stack,
-  Badge
+  Badge,
+  Text,
+  Divider
 } from '@chakra-ui/react';
 import { FiEdit2, FiTrash2, FiPlus } from 'react-icons/fi';
 import api from '../services/api';
 import useAuthStore from '../store/authStore';
 
-const ALL_PERMISSIONS = [
-  { value: 'USER_INVITE', label: 'Приглашать пользователей' },
-  { value: 'USER_DELETE', label: 'Удалять пользователей' },
-  { value: 'USER_READ', label: 'Видеть список пользователей' },
-  { value: 'USER_ASSIGN_ROLE', label: 'Назначать роли' },
-  { value: 'ROLE_MANAGE', label: 'Управлять ролями' },
-  { value: 'TOOL_CREATE', label: 'Создавать инструменты' },
-  { value: 'TOOL_UPDATE', label: 'Редактировать инструменты' },
-  { value: 'TOOL_DELETE', label: 'Удалять инструменты' },
-  { value: 'TOOL_READ', label: 'Видеть список инструментов' },
-  { value: 'TOOL_TRANSFER', label: 'Передавать инструменты' },
-  { value: 'TOOL_CHECKIN', label: 'Принимать инструменты на склад' }
+const PERMISSIONS_BY_CATEGORY = [
+  {
+    category: 'Управление пользователями',
+    permissions: [
+      { value: 'USER_INVITE', label: 'Приглашать пользователей' },
+      { value: 'USER_DELETE', label: 'Удалять пользователей' },
+      { value: 'USER_READ', label: 'Видеть список пользователей' },
+      { value: 'USER_ASSIGN_ROLE', label: 'Назначать роли' }
+    ]
+  },
+  {
+    category: 'Управление ролями',
+    permissions: [
+      { value: 'ROLE_MANAGE', label: 'Управлять ролями' }
+    ]
+  },
+  {
+    category: 'Управление инструментами',
+    permissions: [
+      { value: 'TOOL_CREATE', label: 'Создавать инструменты' },
+      { value: 'TOOL_UPDATE', label: 'Редактировать инструменты' },
+      { value: 'TOOL_DELETE', label: 'Удалять инструменты' },
+      { value: 'TOOL_READ', label: 'Видеть список инструментов' },
+      { value: 'TOOL_TRANSFER', label: 'Передавать инструменты' },
+      { value: 'TOOL_CHECKIN', label: 'Принимать инструменты на склад' }
+    ]
+  },
+  {
+    category: 'Управление складами',
+    permissions: [
+      { value: 'WAREHOUSE_CREATE', label: 'Создавать склады' },
+      { value: 'WAREHOUSE_UPDATE', label: 'Редактировать склады' },
+      { value: 'WAREHOUSE_DELETE', label: 'Удалять склады' },
+      { value: 'WAREHOUSE_READ', label: 'Видеть список складов' }
+    ]
+  }
 ];
 
 const RolesPage = () => {
@@ -240,17 +266,29 @@ const RolesPage = () => {
 
               <FormControl>
                 <FormLabel>Права доступа</FormLabel>
-                <Stack spacing={2}>
-                  {ALL_PERMISSIONS.map((perm) => (
-                    <Checkbox
-                      key={perm.value}
-                      isChecked={selectedPermissions.includes(perm.value)}
-                      onChange={() => togglePermission(perm.value)}
-                    >
-                      {perm.label}
-                    </Checkbox>
+                <VStack spacing={4} align="stretch">
+                  {PERMISSIONS_BY_CATEGORY.map((group, groupIndex) => (
+                    <Box key={group.category}>
+                      <Text fontWeight="bold" fontSize="sm" mb={2} color="gray.600">
+                        {group.category}
+                      </Text>
+                      <Stack spacing={2} pl={2}>
+                        {group.permissions.map((perm) => (
+                          <Checkbox
+                            key={perm.value}
+                            isChecked={selectedPermissions.includes(perm.value)}
+                            onChange={() => togglePermission(perm.value)}
+                          >
+                            {perm.label}
+                          </Checkbox>
+                        ))}
+                      </Stack>
+                      {groupIndex < PERMISSIONS_BY_CATEGORY.length - 1 && (
+                        <Divider mt={3} />
+                      )}
+                    </Box>
                   ))}
-                </Stack>
+                </VStack>
               </FormControl>
             </VStack>
           </ModalBody>

@@ -15,7 +15,8 @@ import {
   useToast,
   Box,
   Text,
-  FormHelperText
+  FormHelperText,
+  Select
 } from '@chakra-ui/react';
 import api from '../services/api';
 import { compressImage } from '../utils/imageCompression';
@@ -25,8 +26,11 @@ const EditToolModal = ({ isOpen, onClose, tool, onSuccess }) => {
     name: '',
     serialNumber: '',
     description: '',
-    imageUrl: ''
+    imageUrl: '',
+    price: '',
+    categoryId: ''
   });
+  const [categories, setCategories] = useState([]);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,11 +42,28 @@ const EditToolModal = ({ isOpen, onClose, tool, onSuccess }) => {
         name: tool.name || '',
         serialNumber: tool.serialNumber || '',
         description: tool.description || '',
-        imageUrl: tool.imageUrl || ''
+        imageUrl: tool.imageUrl || '',
+        price: tool.price ? tool.price.toString() : '',
+        categoryId: tool.categoryId || ''
       });
       setImagePreview(tool.imageUrl || '');
     }
   }, [tool]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchCategories();
+    }
+  }, [isOpen]);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await api.get('/categories');
+      setCategories(response.data.categories);
+    } catch (error) {
+      console.error('Не удалось загрузить категории:', error);
+    }
+  };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -113,7 +134,14 @@ const EditToolModal = ({ isOpen, onClose, tool, onSuccess }) => {
         imageUrl = await uploadImage(imageFile);
       }
 
-      await api.put(`/tools/${tool.id}`, { ...formData, imageUrl });
+      const payload = {
+        ...formData,
+        imageUrl,
+        price: formData.price ? parseFloat(formData.price) : null,
+        categoryId: formData.categoryId || null
+      };
+
+      await api.put(`/tools/${tool.id}`, payload);
       
       toast({
         title: 'Инструмент обновлен',
@@ -171,6 +199,35 @@ const EditToolModal = ({ isOpen, onClose, tool, onSuccess }) => {
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 />
+              </FormControl>
+
+              <FormControl>
+                <FormLabel>Категория</FormLabel>
+                <Select
+                  placeholder="Выберите категорию (необязательно)"
+                  value={formData.categoryId}
+                  onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                >
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <FormControl>
+                <FormLabel>Цена</FormLabel>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={formData.price}
+                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                />
+                <FormHelperText>
+                  Необязательное поле
+                </FormHelperText>
               </FormControl>
 
               <FormControl>

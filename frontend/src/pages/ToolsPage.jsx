@@ -38,13 +38,16 @@ import { compressImage } from '../utils/imageCompression';
 const ToolsPage = () => {
   const [tools, setTools] = useState([]);
   const [warehouses, setWarehouses] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({ 
     name: '', 
     serialNumber: '', 
     description: '',
     imageUrl: '',
-    warehouseId: ''
+    warehouseId: '',
+    price: '',
+    categoryId: ''
   });
   const [filterStatus, setFilterStatus] = useState('');
   const [viewMode, setViewMode] = useState('grid');
@@ -65,6 +68,7 @@ const ToolsPage = () => {
   useEffect(() => {
     fetchTools();
     fetchWarehouses();
+    fetchCategories();
   }, [filterStatus]);
 
   const fetchTools = async () => {
@@ -91,6 +95,15 @@ const ToolsPage = () => {
       setWarehouses(response.data.warehouses);
     } catch (error) {
       console.error('Не удалось загрузить склады:', error);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const response = await api.get('/categories');
+      setCategories(response.data.categories);
+    } catch (error) {
+      console.error('Не удалось загрузить категории:', error);
     }
   };
 
@@ -161,14 +174,21 @@ const ToolsPage = () => {
         imageUrl = await uploadImage(imageFile);
       }
 
-      await api.post('/tools', { ...formData, imageUrl });
+      const payload = {
+        ...formData,
+        imageUrl,
+        price: formData.price ? parseFloat(formData.price) : null,
+        categoryId: formData.categoryId || null
+      };
+
+      await api.post('/tools', payload);
       toast({
         title: 'Инструмент создан',
         status: 'success',
         duration: 3000,
         isClosable: true,
       });
-      setFormData({ name: '', serialNumber: '', description: '', imageUrl: '', warehouseId: '' });
+      setFormData({ name: '', serialNumber: '', description: '', imageUrl: '', warehouseId: '', price: '', categoryId: '' });
       setImageFile(null);
       setImagePreview('');
       onClose();
@@ -395,6 +415,35 @@ const ToolsPage = () => {
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   />
+                </FormControl>
+
+                <FormControl>
+                  <FormLabel>Категория</FormLabel>
+                  <Select
+                    placeholder="Выберите категорию (необязательно)"
+                    value={formData.categoryId}
+                    onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                  >
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <FormControl>
+                  <FormLabel>Цена</FormLabel>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  />
+                  <FormHelperText>
+                    Необязательное поле
+                  </FormHelperText>
                 </FormControl>
 
                 <FormControl>

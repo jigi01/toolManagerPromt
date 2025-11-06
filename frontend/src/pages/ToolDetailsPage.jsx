@@ -203,6 +203,22 @@ const ToolDetailsPage = () => {
                       Информация
                     </Text>
                     <VStack align="stretch" spacing={2}>
+                      {tool.category && (
+                        <HStack>
+                          <Text color="gray.600" minW="150px">
+                            Категория:
+                          </Text>
+                          <Badge colorScheme="purple">{tool.category.name}</Badge>
+                        </HStack>
+                      )}
+                      {tool.price && (
+                        <HStack>
+                          <Text color="gray.600" minW="150px">
+                            Цена:
+                          </Text>
+                          <Text fontWeight="medium">{parseFloat(tool.price).toFixed(2)} ₽</Text>
+                        </HStack>
+                      )}
                       <HStack>
                         <Text color="gray.600" minW="150px">
                           Текущий владелец:

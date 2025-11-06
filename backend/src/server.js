@@ -10,6 +10,7 @@ import transferRoutes from './routes/transfer.routes.js';
 import roleRoutes from './routes/role.routes.js';
 import invitationRoutes from './routes/invitation.routes.js';
 import warehouseRoutes from './routes/warehouse.routes.js';
+import categoryRoutes from './routes/category.routes.js';
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ app.use('/api/transfer', transferRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/invitations', invitationRoutes);
 app.use('/api/warehouses', warehouseRoutes);
+app.use('/api/categories', categoryRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'ToolManager API is running' });

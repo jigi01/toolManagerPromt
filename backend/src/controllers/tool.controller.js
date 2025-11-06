@@ -8,14 +8,16 @@ export const createTool = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { name, serialNumber, description, imageUrl, warehouseId } = req.body;
+    const { name, serialNumber, description, imageUrl, warehouseId, price, categoryId } = req.body;
     const tool = await toolService.createTool(
       name,
       serialNumber,
       description,
       req.user.companyId,
       imageUrl,
-      warehouseId
+      warehouseId,
+      price,
+      categoryId
     );
 
     res.status(201).json({ tool });
@@ -26,8 +28,8 @@ export const createTool = async (req, res) => {
 
 export const getTools = async (req, res) => {
   try {
-    const { status, currentUserId, warehouseId } = req.query;
-    const tools = await toolService.getAllTools(req.user.companyId, { status, currentUserId, warehouseId });
+    const { status, currentUserId, warehouseId, categoryId } = req.query;
+    const tools = await toolService.getAllTools(req.user.companyId, { status, currentUserId, warehouseId, categoryId });
 
     res.json({ tools });
   } catch (error) {

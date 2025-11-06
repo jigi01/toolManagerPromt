@@ -1,6 +1,6 @@
 import prisma from '../utils/prisma.js';
 
-export const createTool = async (name, serialNumber, description, companyId, imageUrl = null, warehouseId = null) => {
+export const createTool = async (name, serialNumber, description, companyId, imageUrl = null, warehouseId = null, price = null, categoryId = null) => {
   const existingTool = await prisma.tool.findUnique({
     where: {
       companyId_serialNumber: {
@@ -41,12 +41,29 @@ export const createTool = async (name, serialNumber, description, companyId, ima
     }
   }
 
+  // Проверяем, что категория существует и принадлежит компании
+  if (categoryId) {
+    const category = await prisma.category.findUnique({
+      where: { id: categoryId }
+    });
+
+    if (!category) {
+      throw new Error('Указанная категория не найдена.');
+    }
+
+    if (category.companyId !== companyId) {
+      throw new Error('Указанная категория не принадлежит вашей компании.');
+    }
+  }
+
   const tool = await prisma.tool.create({
     data: {
       name,
       serialNumber,
       description,
       imageUrl,
+      price,
+      categoryId,
       companyId,
       warehouseId: targetWarehouseId,
       status: 'AVAILABLE'
@@ -71,6 +88,10 @@ export const getAllTools = async (companyId, filters = {}) => {
     where.warehouseId = filters.warehouseId;
   }
 
+  if (filters.categoryId) {
+    where.categoryId = filters.categoryId;
+  }
+
   const tools = await prisma.tool.findMany({
     where,
     include: {
@@ -78,6 +99,9 @@ export const getAllTools = async (companyId, filters = {}) => {
         select: { id: true, name: true, email: true }
       },
       warehouse: {
+        select: { id: true, name: true }
+      },
+      category: {
         select: { id: true, name: true }
       }
     },
@@ -95,6 +119,9 @@ export const getToolById = async (toolId, companyId) => {
         select: { id: true, name: true, email: true }
       },
       warehouse: {
+        select: { id: true, name: true }
+      },
+      category: {
         select: { id: true, name: true }
       },
       history: {
@@ -144,6 +171,21 @@ export const updateTool = async (toolId, companyId, updates) => {
     throw new Error('Этот инструмент не принадлежит вашей компании.');
   }
 
+  // Проверяем, что категория существует и принадлежит компании
+  if (updates.categoryId) {
+    const category = await prisma.category.findUnique({
+      where: { id: updates.categoryId }
+    });
+
+    if (!category) {
+      throw new Error('Указанная категория не найдена.');
+    }
+
+    if (category.companyId !== companyId) {
+      throw new Error('Указанная категория не принадлежит вашей компании.');
+    }
+  }
+
   const updatedTool = await prisma.tool.update({
     where: { id: toolId },
     data: updates,
@@ -152,6 +194,9 @@ export const updateTool = async (toolId, companyId, updates) => {
         select: { id: true, name: true, email: true }
       },
       warehouse: {
+        select: { id: true, name: true }
+      },
+      category: {
         select: { id: true, name: true }
       }
     }
@@ -263,6 +308,9 @@ export const transferTool = async (toolId, toUserId, actorId, companyId, toWareh
         },
         warehouse: {
           select: { id: true, name: true }
+        },
+        category: {
+          select: { id: true, name: true }
         }
       }
     });
@@ -346,6 +394,9 @@ export const checkinTool = async (toolId, actorId, companyId, warehouseId = null
           select: { id: true, name: true, email: true }
         },
         warehouse: {
+          select: { id: true, name: true }
+        },
+        category: {
           select: { id: true, name: true }
         }
       }

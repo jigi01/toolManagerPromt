@@ -13,6 +13,7 @@ import ToolDetailsPage from '../pages/ToolDetailsPage';
 import UsersPage from '../pages/UsersPage';
 import RolesPage from '../pages/RolesPage';
 import WarehousesPage from '../pages/WarehousesPage';
+import SettingsPage from '../pages/SettingsPage';
 import useAuthStore from '../store/authStore';
 
 const HomePage = () => {
@@ -97,6 +98,17 @@ const AppRouter = () => {
                   <WarehousesPage />
                 </Layout>
               </PermissionRoute>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <SettingsPage />
+              </Layout>
             </ProtectedRoute>
           }
         />

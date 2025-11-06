@@ -455,6 +455,7 @@ chmod +x /tmp/seed.sh
 
 - **Backend API:** http://localhost:5000/api
 - **Frontend:** http://localhost:5173
+- **Настройки:** http://localhost:5173/settings
 - **Prisma Studio:** `npx prisma studio` (http://localhost:5555)
 - **Health Check:** http://localhost:5000/api/health
 
@@ -465,6 +466,7 @@ chmod +x /tmp/seed.sh
 - [QUICK_START.md](./QUICK_START.md) - Быстрый старт
 - [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md) - Полное руководство
 - [API_CATEGORIES.md](./API_CATEGORIES.md) - API документация
+- [SETTINGS_GUIDE.md](./SETTINGS_GUIDE.md) - Настройки и категории
 - [FAQ.md](./FAQ.md) - Частые вопросы
 
 ---

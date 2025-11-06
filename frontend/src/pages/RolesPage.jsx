@@ -53,12 +53,12 @@ const PERMISSIONS_BY_CATEGORY = [
     ]
   },
   {
-    category: 'Управление инструментами',
+    category: 'Управление инструментами и категориями',
     permissions: [
-      { value: 'TOOL_CREATE', label: 'Создавать инструменты' },
-      { value: 'TOOL_UPDATE', label: 'Редактировать инструменты' },
-      { value: 'TOOL_DELETE', label: 'Удалять инструменты' },
-      { value: 'TOOL_READ', label: 'Видеть список инструментов' },
+      { value: 'TOOL_CREATE', label: 'Создавать инструменты и категории' },
+      { value: 'TOOL_UPDATE', label: 'Редактировать инструменты и категории' },
+      { value: 'TOOL_DELETE', label: 'Удалять инструменты и категории' },
+      { value: 'TOOL_READ', label: 'Видеть список инструментов и категорий' },
       { value: 'TOOL_TRANSFER', label: 'Передавать инструменты' },
       { value: 'TOOL_CHECKIN', label: 'Принимать инструменты на склад' }
     ]

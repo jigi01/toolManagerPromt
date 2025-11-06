@@ -1,6 +1,6 @@
-import { Box, Flex, Button, Text, Container, useColorModeValue, HStack, Menu, MenuButton, MenuList, MenuItem, Avatar } from '@chakra-ui/react';
+import { Box, Flex, Button, Text, Container, useColorModeValue, HStack, Menu, MenuButton, MenuList, MenuItem, Avatar, MenuDivider } from '@chakra-ui/react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiLogOut, FiTool, FiUsers, FiHome, FiShield, FiPackage } from 'react-icons/fi';
+import { FiLogOut, FiTool, FiUsers, FiHome, FiShield, FiPackage, FiSettings } from 'react-icons/fi';
 import useAuthStore from '../store/authStore';
 
 const Layout = ({ children }) => {
@@ -95,6 +95,10 @@ const Layout = ({ children }) => {
                 </HStack>
               </MenuButton>
               <MenuList>
+                <MenuItem icon={<FiSettings />} as={Link} to="/settings">
+                  Настройки
+                </MenuItem>
+                <MenuDivider />
                 <MenuItem icon={<FiLogOut />} onClick={handleLogout}>
                   Выйти
                 </MenuItem>

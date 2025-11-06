@@ -96,6 +96,32 @@ const ToolsPage = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Проверяем тип файла
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+      if (!validTypes.includes(file.type)) {
+        toast({
+          title: 'Неверный формат',
+          description: 'Поддерживаются только изображения (JPG, PNG, GIF, WebP, SVG)',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+        return;
+      }
+
+      // Проверяем размер файла (макс 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB в байтах
+      if (file.size > maxSize) {
+        toast({
+          title: 'Файл слишком большой',
+          description: 'Максимальный размер изображения - 5MB',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+        return;
+      }
+
       setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -381,12 +407,12 @@ const ToolsPage = () => {
                   <FormLabel>Изображение</FormLabel>
                   <Input
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/svg+xml"
                     onChange={handleImageChange}
                     pt={1}
                   />
                   <FormHelperText>
-                    Или введите URL изображения:
+                    Поддерживаемые форматы: JPG, PNG, GIF, WebP, SVG (макс. 5MB). Или введите URL изображения:
                   </FormHelperText>
                   <Input
                     placeholder="https://example.com/image.jpg"

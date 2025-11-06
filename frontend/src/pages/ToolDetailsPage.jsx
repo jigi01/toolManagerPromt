@@ -21,9 +21,12 @@ import {
   Th,
   Td,
   Avatar,
-  useDisclosure
+  useDisclosure,
+  Image,
+  Grid,
+  GridItem
 } from '@chakra-ui/react';
-import { FiArrowLeft, FiClock, FiEdit2 } from 'react-icons/fi';
+import { FiArrowLeft, FiClock, FiEdit2, FiTool } from 'react-icons/fi';
 import api from '../services/api';
 import useAuthStore from '../store/authStore';
 import EditToolModal from '../components/EditToolModal';
@@ -112,49 +115,113 @@ const ToolDetailsPage = () => {
       <Card>
         <CardBody>
           <VStack spacing={6} align="stretch">
-            <Box>
-              <Heading size="lg" mb={2}>
-                {tool.name}
-              </Heading>
-              <HStack spacing={4} mt={2}>
-                {getStatusBadge(tool.status)}
-                <Text color="gray.500" fontFamily="mono" fontSize="sm">
-                  {tool.serialNumber}
-                </Text>
-              </HStack>
-            </Box>
-
-            <Divider />
-
-            <Box>
-              <Text fontWeight="bold" mb={2}>
-                Информация
-              </Text>
-              <VStack align="stretch" spacing={2}>
-                <HStack>
-                  <Text color="gray.600" minW="150px">
-                    Текущий владелец:
-                  </Text>
-                  <Text fontWeight="medium">
-                    {tool.currentOwner ? tool.currentOwner.name : 'На складе'}
-                  </Text>
-                </HStack>
-                {tool.description && (
-                  <HStack align="start">
-                    <Text color="gray.600" minW="150px">
-                      Описание:
-                    </Text>
-                    <Text>{tool.description}</Text>
-                  </HStack>
+            <Grid templateColumns={{ base: '1fr', md: '300px 1fr' }} gap={6}>
+              <GridItem>
+                {tool.imageUrl ? (
+                  <Image
+                    src={tool.imageUrl}
+                    alt={tool.name}
+                    w="100%"
+                    h="300px"
+                    objectFit="cover"
+                    borderRadius="md"
+                    border="1px solid"
+                    borderColor="gray.200"
+                    fallback={
+                      <Center
+                        w="100%"
+                        h="300px"
+                        bg="gray.100"
+                        borderRadius="md"
+                        border="1px solid"
+                        borderColor="gray.200"
+                      >
+                        <VStack spacing={2}>
+                          <FiTool size={48} color="gray" />
+                          <Text color="gray.500" fontSize="sm">
+                            Нет изображения
+                          </Text>
+                        </VStack>
+                      </Center>
+                    }
+                  />
+                ) : (
+                  <Center
+                    w="100%"
+                    h="300px"
+                    bg="gray.100"
+                    borderRadius="md"
+                    border="1px solid"
+                    borderColor="gray.200"
+                  >
+                    <VStack spacing={2}>
+                      <FiTool size={48} color="gray" />
+                      <Text color="gray.500" fontSize="sm">
+                        Нет изображения
+                      </Text>
+                    </VStack>
+                  </Center>
                 )}
-                <HStack>
-                  <Text color="gray.600" minW="150px">
-                    Дата создания:
-                  </Text>
-                  <Text>{formatDate(tool.createdAt)}</Text>
-                </HStack>
-              </VStack>
-            </Box>
+              </GridItem>
+
+              <GridItem>
+                <VStack spacing={4} align="stretch">
+                  <Box>
+                    <Heading size="lg" mb={2}>
+                      {tool.name}
+                    </Heading>
+                    <HStack spacing={4} mt={2}>
+                      {getStatusBadge(tool.status)}
+                      <Text color="gray.500" fontFamily="mono" fontSize="sm">
+                        {tool.serialNumber}
+                      </Text>
+                    </HStack>
+                  </Box>
+
+                  <Divider />
+
+                  <Box>
+                    <Text fontWeight="bold" mb={2}>
+                      Информация
+                    </Text>
+                    <VStack align="stretch" spacing={2}>
+                      <HStack>
+                        <Text color="gray.600" minW="150px">
+                          Текущий владелец:
+                        </Text>
+                        <Text fontWeight="medium">
+                          {tool.currentOwner ? tool.currentOwner.name : 'На складе'}
+                        </Text>
+                      </HStack>
+                      {tool.warehouse && (
+                        <HStack>
+                          <Text color="gray.600" minW="150px">
+                            Склад:
+                          </Text>
+                          <Text fontWeight="medium">
+                            {tool.warehouse.name}
+                          </Text>
+                        </HStack>
+                      )}
+                      {tool.description && (
+                        <HStack align="start">
+                          <Text color="gray.600" minW="150px">
+                            Описание:
+                          </Text>
+                          <Text>{tool.description}</Text>
+                        </HStack>
+                      )}
+                      <HStack>
+                        <Text color="gray.600" minW="150px">
+                          Дата создания:
+                        </Text>
+                        <Text>{formatDate(tool.createdAt)}</Text>
+                      </HStack>
+                    </VStack>
+                  </Box>
+                </VStack>
+              </GridItem>
+            </Grid>
 
             <Divider />
 

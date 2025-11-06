@@ -66,6 +66,8 @@ const ToolTable = ({ tools, onDelete, onTransfer, onCheckin, canUpdate, onEdit, 
               <Tr>
                 <Th>Инструмент</Th>
                 <Th>Серийный номер</Th>
+                <Th>Категория</Th>
+                <Th>Цена</Th>
                 <Th>Статус</Th>
                 <Th>Владелец</Th>
                 <Th>QR-код</Th>
@@ -105,6 +107,24 @@ const ToolTable = ({ tools, onDelete, onTransfer, onCheckin, canUpdate, onEdit, 
                       <Text fontFamily="mono" fontSize="sm">
                         {tool.serialNumber}
                       </Text>
+                    </Td>
+                    <Td>
+                      {tool.category ? (
+                        <Badge colorScheme="purple" fontSize="xs">
+                          {tool.category.name}
+                        </Badge>
+                      ) : (
+                        <Text color="gray.500" fontSize="sm">—</Text>
+                      )}
+                    </Td>
+                    <Td>
+                      {tool.price ? (
+                        <Text fontWeight="medium" color="green.600">
+                          {parseFloat(tool.price).toFixed(2)} ₽
+                        </Text>
+                      ) : (
+                        <Text color="gray.500" fontSize="sm">—</Text>
+                      )}
                     </Td>
                     <Td>{getStatusBadge(tool.status)}</Td>
                     <Td>

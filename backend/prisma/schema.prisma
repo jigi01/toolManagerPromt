@@ -49,6 +49,7 @@ model Company {
   roles       Role[]
   invitations Invitation[]
   warehouses  Warehouse[]
+  categories  Category[]
 }
 
 // Модель роли (кастомная, управляемая)
@@ -134,12 +135,17 @@ model Tool {
   serialNumber String   // Серийный номер
   description  String?
   imageUrl     String?  // URL изображения инструмента
+  price        Decimal? // Цена инструмента (необязательное поле)
   status       String   @default("AVAILABLE") // "AVAILABLE" (на складе), "IN_USE" (у сотрудника)
   createdAt    DateTime @default(now())
 
   // Привязка к компании
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  // Привязка к категории
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   // Текущий владелец (null = на складе)
   currentUserId String?
@@ -188,4 +194,22 @@ model ToolHistory {
 
   // Примечание (опционально)
   notes String?
+}
+
+// Модель категории инструментов
+model Category {
+  id        String   @id @default(cuid())
+  name      String   // Название категории (н-р: "Электроинструмент", "Ручной")
+  
+  // Привязка к компании (у каждой компании свои категории)
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  // Связь с инструментами (в категории много инструментов)
+  tools     Tool[]
+  
+  createdAt DateTime @default(now())
+
+  // Не позволяет создавать категории с одинаковым именем в рамках одной компании
+  @@unique([name, companyId])
 }

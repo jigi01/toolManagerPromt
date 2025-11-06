@@ -132,7 +132,20 @@ const ToolCard = ({ tool, onDelete, onTransfer, onCheckin, canUpdate, onEdit, cu
 
             <HStack justify="space-between" align="start">
               <VStack align="start" spacing={1} flex={1}>
-                {getStatusBadge(tool.status)}
+                <HStack spacing={2}>
+                  {getStatusBadge(tool.status)}
+                  {tool.category && (
+                    <Badge colorScheme="purple" fontSize="xs">
+                      {tool.category.name}
+                    </Badge>
+                  )}
+                </HStack>
+                
+                {tool.price && (
+                  <Text fontSize="sm" fontWeight="bold" color="green.600">
+                    {parseFloat(tool.price).toFixed(2)} ₽
+                  </Text>
+                )}
                 
                 {tool.currentUser ? (
                   <Box>

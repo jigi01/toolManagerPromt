@@ -18,6 +18,7 @@ import {
   FormHelperText
 } from '@chakra-ui/react';
 import api from '../services/api';
+import { compressImage } from '../utils/imageCompression';
 
 const EditToolModal = ({ isOpen, onClose, tool, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -73,6 +74,8 @@ const EditToolModal = ({ isOpen, onClose, tool, onSuccess }) => {
       }
 
       setImageFile(file);
+      
+      // Показываем превью
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
@@ -82,13 +85,21 @@ const EditToolModal = ({ isOpen, onClose, tool, onSuccess }) => {
   };
 
   const uploadImage = async (file) => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        resolve(reader.result);
-      };
-      reader.readAsDataURL(file);
-    });
+    try {
+      // Сжимаем изображение перед загрузкой
+      const compressedDataUrl = await compressImage(file, 1920, 1920, 0.8);
+      return compressedDataUrl;
+    } catch (error) {
+      console.error('Ошибка сжатия изображения:', error);
+      // В случае ошибки возвращаем оригинал
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          resolve(reader.result);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
   };
 
   const handleSubmit = async (e) => {

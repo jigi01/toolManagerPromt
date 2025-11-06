@@ -33,6 +33,7 @@ import useAuthStore from '../store/authStore';
 import ToolCard from '../components/ToolCard';
 import ToolTable from '../components/ToolTable';
 import EditToolModal from '../components/EditToolModal';
+import { compressImage } from '../utils/imageCompression';
 
 const ToolsPage = () => {
   const [tools, setTools] = useState([]);
@@ -123,6 +124,8 @@ const ToolsPage = () => {
       }
 
       setImageFile(file);
+      
+      // Показываем превью
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
@@ -132,15 +135,21 @@ const ToolsPage = () => {
   };
 
   const uploadImage = async (file) => {
-    // В реальном приложении здесь был бы запрос на сервер для загрузки файла
-    // Для демонстрации просто возвращаем data URL
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        resolve(reader.result);
-      };
-      reader.readAsDataURL(file);
-    });
+    try {
+      // Сжимаем изображение перед загрузкой
+      const compressedDataUrl = await compressImage(file, 1920, 1920, 0.8);
+      return compressedDataUrl;
+    } catch (error) {
+      console.error('Ошибка сжатия изображения:', error);
+      // В случае ошибки возвращаем оригинал
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          resolve(reader.result);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
   };
 
   const handleCreateTool = async (e) => {

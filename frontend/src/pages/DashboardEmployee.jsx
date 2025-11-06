@@ -99,9 +99,9 @@ const DashboardEmployee = () => {
     }
   };
 
-  const handleCheckin = async (toolId) => {
+  const handleCheckin = async (toolId, warehouseId) => {
     try {
-      await api.post(`/tools/${toolId}/checkin`);
+      await api.post(`/tools/${toolId}/checkin`, { warehouseId });
       toast({
         title: 'Инструмент возвращен на склад',
         status: 'success',

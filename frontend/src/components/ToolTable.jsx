@@ -20,9 +20,11 @@ import {
 import { FiSend, FiPackage, FiTrash2, FiEye, FiEdit2 } from 'react-icons/fi';
 import { Link as RouterLink } from 'react-router-dom';
 import TransferModal from './TransferModal';
+import CheckinModal from './CheckinModal';
 
 const ToolTable = ({ tools, onDelete, onTransfer, onCheckin, canUpdate, onEdit, currentUserId }) => {
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpen: isTransferOpen, onOpen: onTransferOpen, onClose: onTransferClose } = useDisclosure();
+  const { isOpen: isCheckinOpen, onOpen: onCheckinOpen, onClose: onCheckinClose } = useDisclosure();
   const [selectedTool, setSelectedTool] = useState(null);
 
   const getStatusBadge = (status) => {
@@ -36,12 +38,22 @@ const ToolTable = ({ tools, onDelete, onTransfer, onCheckin, canUpdate, onEdit, 
 
   const handleTransferClick = (tool) => {
     setSelectedTool(tool);
-    onOpen();
+    onTransferOpen();
+  };
+
+  const handleCheckinClick = (tool) => {
+    setSelectedTool(tool);
+    onCheckinOpen();
   };
 
   const handleTransferSuccess = (toUserId) => {
     onTransfer(selectedTool.id, toUserId);
-    onClose();
+    onTransferClose();
+  };
+
+  const handleCheckinSuccess = (warehouseId) => {
+    onCheckin(selectedTool.id, warehouseId);
+    onCheckinClose();
   };
 
   return (
@@ -141,7 +153,7 @@ const ToolTable = ({ tools, onDelete, onTransfer, onCheckin, canUpdate, onEdit, 
                             leftIcon={<FiPackage />}
                             colorScheme="green"
                             variant="outline"
-                            onClick={() => onCheckin(tool.id)}
+                            onClick={() => handleCheckinClick(tool)}
                           >
                             На склад
                           </Button>
@@ -167,12 +179,20 @@ const ToolTable = ({ tools, onDelete, onTransfer, onCheckin, canUpdate, onEdit, 
       </Card>
 
       {selectedTool && (
-        <TransferModal
-          isOpen={isOpen}
-          onClose={onClose}
-          tool={selectedTool}
-          onSuccess={handleTransferSuccess}
-        />
+        <>
+          <TransferModal
+            isOpen={isTransferOpen}
+            onClose={onTransferClose}
+            tool={selectedTool}
+            onSuccess={handleTransferSuccess}
+          />
+          <CheckinModal
+            isOpen={isCheckinOpen}
+            onClose={onCheckinClose}
+            tool={selectedTool}
+            onSuccess={handleCheckinSuccess}
+          />
+        </>
       )}
     </>
   );

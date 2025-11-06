@@ -18,6 +18,7 @@ import {
   FormHelperText
 } from '@chakra-ui/react';
 import api from '../services/api';
+import { compressImage } from '../utils/imageCompression';
 
 const EditToolModal = ({ isOpen, onClose, tool, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -46,7 +47,35 @@ const EditToolModal = ({ isOpen, onClose, tool, onSuccess }) => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Проверяем тип файла
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+      if (!validTypes.includes(file.type)) {
+        toast({
+          title: 'Неверный формат',
+          description: 'Поддерживаются только изображения (JPG, PNG, GIF, WebP, SVG)',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+        return;
+      }
+
+      // Проверяем размер файла (макс 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB в байтах
+      if (file.size > maxSize) {
+        toast({
+          title: 'Файл слишком большой',
+          description: 'Максимальный размер изображения - 5MB',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+        return;
+      }
+
       setImageFile(file);
+      
+      // Показываем превью
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
@@ -56,13 +85,21 @@ const EditToolModal = ({ isOpen, onClose, tool, onSuccess }) => {
   };
 
   const uploadImage = async (file) => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        resolve(reader.result);
-      };
-      reader.readAsDataURL(file);
-    });
+    try {
+      // Сжимаем изображение перед загрузкой
+      const compressedDataUrl = await compressImage(file, 1920, 1920, 0.8);
+      return compressedDataUrl;
+    } catch (error) {
+      console.error('Ошибка сжатия изображения:', error);
+      // В случае ошибки возвращаем оригинал
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          resolve(reader.result);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -140,12 +177,12 @@ const EditToolModal = ({ isOpen, onClose, tool, onSuccess }) => {
                 <FormLabel>Изображение</FormLabel>
                 <Input
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/svg+xml"
                   onChange={handleImageChange}
                   pt={1}
                 />
                 <FormHelperText>
-                  Или введите URL изображения:
+                  Поддерживаемые форматы: JPG, PNG, GIF, WebP, SVG (макс. 5MB). Или введите URL изображения:
                 </FormHelperText>
                 <Input
                   placeholder="https://example.com/image.jpg"

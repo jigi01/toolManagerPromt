@@ -19,27 +19,32 @@ import {
 } from '@chakra-ui/react';
 import api from '../services/api';
 
-const TransferModal = ({ isOpen, onClose, tool, onSuccess }) => {
-  const [users, setUsers] = useState([]);
-  const [selectedUserId, setSelectedUserId] = useState('');
+const CheckinModal = ({ isOpen, onClose, tool, onSuccess }) => {
+  const [warehouses, setWarehouses] = useState([]);
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
     if (isOpen) {
-      fetchUsers();
+      fetchWarehouses();
     }
   }, [isOpen]);
 
-  const fetchUsers = async () => {
+  const fetchWarehouses = async () => {
     try {
-      const response = await api.get('/users');
-      setUsers(response.data.users);
+      const response = await api.get('/warehouses');
+      setWarehouses(response.data.warehouses);
+      
+      const defaultWarehouse = response.data.warehouses.find(w => w.isDefault);
+      if (defaultWarehouse) {
+        setSelectedWarehouseId(defaultWarehouse.id);
+      }
     } catch (error) {
       toast({
-        title: 'Ошибка загрузки пользователей',
-        description: error.response?.data?.error || 'Не удалось загрузить список пользователей',
+        title: 'Ошибка загрузки складов',
+        description: error.response?.data?.error || 'Не удалось загрузить список складов',
         status: 'error',
         duration: 3000,
         isClosable: true
@@ -50,10 +55,10 @@ const TransferModal = ({ isOpen, onClose, tool, onSuccess }) => {
   };
 
   const handleSubmit = async () => {
-    if (!selectedUserId) {
+    if (!selectedWarehouseId) {
       toast({
         title: 'Ошибка',
-        description: 'Выберите получателя',
+        description: 'Выберите склад',
         status: 'warning',
         duration: 3000,
         isClosable: true
@@ -62,13 +67,13 @@ const TransferModal = ({ isOpen, onClose, tool, onSuccess }) => {
     }
 
     setSubmitting(true);
-    onSuccess(selectedUserId);
+    onSuccess(selectedWarehouseId);
     setSubmitting(false);
     handleClose();
   };
 
   const handleClose = () => {
-    setSelectedUserId('');
+    setSelectedWarehouseId('');
     setLoading(true);
     onClose();
   };
@@ -77,7 +82,7 @@ const TransferModal = ({ isOpen, onClose, tool, onSuccess }) => {
     <Modal isOpen={isOpen} onClose={handleClose}>
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>Передать инструмент</ModalHeader>
+        <ModalHeader>Вернуть на склад</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
           {loading ? (
@@ -94,15 +99,14 @@ const TransferModal = ({ isOpen, onClose, tool, onSuccess }) => {
               </Text>
 
               <FormControl isRequired>
-                <FormLabel>Выберите получателя</FormLabel>
+                <FormLabel>Выберите склад</FormLabel>
                 <Select
-                  placeholder="Выберите сотрудника"
-                  value={selectedUserId}
-                  onChange={(e) => setSelectedUserId(e.target.value)}
+                  value={selectedWarehouseId}
+                  onChange={(e) => setSelectedWarehouseId(e.target.value)}
                 >
-                  {users.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.name} ({user.email})
+                  {warehouses.map((warehouse) => (
+                    <option key={warehouse.id} value={warehouse.id}>
+                      {warehouse.name} {warehouse.isDefault && '(По умолчанию)'}
                     </option>
                   ))}
                 </Select>
@@ -115,12 +119,12 @@ const TransferModal = ({ isOpen, onClose, tool, onSuccess }) => {
             Отмена
           </Button>
           <Button 
-            colorScheme="blue" 
+            colorScheme="green" 
             onClick={handleSubmit}
             isLoading={submitting}
-            isDisabled={loading || !selectedUserId}
+            isDisabled={loading || !selectedWarehouseId}
           >
-            Передать
+            Вернуть на склад
           </Button>
         </ModalFooter>
       </ModalContent>
@@ -128,4 +132,4 @@ const TransferModal = ({ isOpen, onClose, tool, onSuccess }) => {
   );
 };
 
-export default TransferModal;
+export default CheckinModal;

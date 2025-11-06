@@ -172,13 +172,9 @@ const ToolsPage = () => {
     }
   };
 
-  const handleTransfer = async (toolId, toUserId, toWarehouseId) => {
+  const handleTransfer = async (toolId, toUserId) => {
     try {
-      const payload = {};
-      if (toUserId) payload.toUserId = toUserId;
-      if (toWarehouseId) payload.toWarehouseId = toWarehouseId;
-      
-      await api.post(`/tools/${toolId}/transfer`, payload);
+      await api.post(`/tools/${toolId}/transfer`, { toUserId });
       toast({
         title: 'Инструмент передан',
         status: 'success',
@@ -197,9 +193,9 @@ const ToolsPage = () => {
     }
   };
 
-  const handleCheckin = async (toolId) => {
+  const handleCheckin = async (toolId, warehouseId) => {
     try {
-      await api.post(`/tools/${toolId}/checkin`);
+      await api.post(`/tools/${toolId}/checkin`, { warehouseId });
       toast({
         title: 'Инструмент возвращен на склад',
         status: 'success',

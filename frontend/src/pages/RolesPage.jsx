@@ -38,38 +38,52 @@ import useAuthStore from '../store/authStore';
 
 const PERMISSIONS_BY_CATEGORY = [
   {
-    category: 'Управление пользователями',
+    category: '👥 Пользователи и роли',
+    description: 'Управление сотрудниками и их правами',
     permissions: [
-      { value: 'USER_INVITE', label: 'Приглашать пользователей' },
-      { value: 'USER_DELETE', label: 'Удалять пользователей' },
-      { value: 'USER_READ', label: 'Видеть список пользователей' },
-      { value: 'USER_ASSIGN_ROLE', label: 'Назначать роли' }
+      { value: 'USER_READ', label: 'Просмотр списка пользователей' },
+      { value: 'USER_INVITE', label: 'Приглашение новых пользователей' },
+      { value: 'USER_ASSIGN_ROLE', label: 'Назначение ролей пользователям' },
+      { value: 'USER_DELETE', label: 'Удаление пользователей' },
+      { value: 'ROLE_MANAGE', label: 'Управление ролями (создание, редактирование, удаление)' }
     ]
   },
   {
-    category: 'Управление ролями',
+    category: '🔧 Инструменты',
+    description: 'CRUD операции с инструментами',
     permissions: [
-      { value: 'ROLE_MANAGE', label: 'Управлять ролями' }
+      { value: 'TOOL_READ', label: 'Просмотр инструментов' },
+      { value: 'TOOL_CREATE', label: 'Создание новых инструментов' },
+      { value: 'TOOL_UPDATE', label: 'Редактирование инструментов' },
+      { value: 'TOOL_DELETE', label: 'Удаление инструментов' }
     ]
   },
   {
-    category: 'Управление инструментами и категориями',
+    category: '📁 Категории',
+    description: 'Управление категориями инструментов',
     permissions: [
-      { value: 'TOOL_CREATE', label: 'Создавать инструменты и категории' },
-      { value: 'TOOL_UPDATE', label: 'Редактировать инструменты и категории' },
-      { value: 'TOOL_DELETE', label: 'Удалять инструменты и категории' },
-      { value: 'TOOL_READ', label: 'Видеть список инструментов и категорий' },
-      { value: 'TOOL_TRANSFER', label: 'Передавать инструменты' },
-      { value: 'TOOL_CHECKIN', label: 'Принимать инструменты на склад' }
+      { value: 'TOOL_READ', label: 'Просмотр категорий (требуется для просмотра инструментов)' },
+      { value: 'TOOL_CREATE', label: 'Создание категорий' },
+      { value: 'TOOL_UPDATE', label: 'Редактирование категорий' },
+      { value: 'TOOL_DELETE', label: 'Удаление категорий' }
     ]
   },
   {
-    category: 'Управление складами',
+    category: '🔄 Операции с инструментами',
+    description: 'Передача и прием инструментов',
     permissions: [
-      { value: 'WAREHOUSE_CREATE', label: 'Создавать склады' },
-      { value: 'WAREHOUSE_UPDATE', label: 'Редактировать склады' },
-      { value: 'WAREHOUSE_DELETE', label: 'Удалять склады' },
-      { value: 'WAREHOUSE_READ', label: 'Видеть список складов' }
+      { value: 'TOOL_TRANSFER', label: 'Передача инструментов другим сотрудникам' },
+      { value: 'TOOL_CHECKIN', label: 'Возврат инструментов на склад' }
+    ]
+  },
+  {
+    category: '📦 Склады',
+    description: 'Управление складами',
+    permissions: [
+      { value: 'WAREHOUSE_READ', label: 'Просмотр складов' },
+      { value: 'WAREHOUSE_CREATE', label: 'Создание складов' },
+      { value: 'WAREHOUSE_UPDATE', label: 'Редактирование складов' },
+      { value: 'WAREHOUSE_DELETE', label: 'Удаление складов' }
     ]
   }
 ];
@@ -188,6 +202,34 @@ const RolesPage = () => {
     );
   };
 
+  const toggleCategoryPermissions = (group) => {
+    const groupPermissions = group.permissions.map(p => p.value);
+    const allSelected = groupPermissions.every(p => selectedPermissions.includes(p));
+    
+    if (allSelected) {
+      // Снять все права категории
+      setSelectedPermissions(prev => 
+        prev.filter(p => !groupPermissions.includes(p))
+      );
+    } else {
+      // Добавить все права категории
+      const uniquePermissions = [...new Set([...selectedPermissions, ...groupPermissions])];
+      setSelectedPermissions(uniquePermissions);
+    }
+  };
+
+  const isCategoryFullySelected = (group) => {
+    const groupPermissions = group.permissions.map(p => p.value);
+    return groupPermissions.every(p => selectedPermissions.includes(p));
+  };
+
+  const isCategoryPartiallySelected = (group) => {
+    const groupPermissions = group.permissions.map(p => p.value);
+    const hasSelected = groupPermissions.some(p => selectedPermissions.includes(p));
+    const allSelected = groupPermissions.every(p => selectedPermissions.includes(p));
+    return hasSelected && !allSelected;
+  };
+
   if (!isBoss) return null;
 
   return (
@@ -269,15 +311,31 @@ const RolesPage = () => {
                 <VStack spacing={4} align="stretch">
                   {PERMISSIONS_BY_CATEGORY.map((group, groupIndex) => (
                     <Box key={group.category}>
-                      <Text fontWeight="bold" fontSize="sm" mb={2} color="gray.600">
-                        {group.category}
-                      </Text>
-                      <Stack spacing={2} pl={2}>
+                      <HStack mb={2}>
+                        <Checkbox
+                          isChecked={isCategoryFullySelected(group)}
+                          isIndeterminate={isCategoryPartiallySelected(group)}
+                          onChange={() => toggleCategoryPermissions(group)}
+                          colorScheme="blue"
+                          fontWeight="bold"
+                        >
+                          <Text fontWeight="bold" fontSize="md">
+                            {group.category}
+                          </Text>
+                        </Checkbox>
+                      </HStack>
+                      {group.description && (
+                        <Text fontSize="xs" color="gray.500" mb={2} pl={6}>
+                          {group.description}
+                        </Text>
+                      )}
+                      <Stack spacing={2} pl={6}>
                         {group.permissions.map((perm) => (
                           <Checkbox
                             key={perm.value}
                             isChecked={selectedPermissions.includes(perm.value)}
                             onChange={() => togglePermission(perm.value)}
+                            size="sm"
                           >
                             {perm.label}
                           </Checkbox>

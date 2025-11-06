@@ -21,6 +21,7 @@ import { FiSend, FiPackage, FiTrash2, FiEye, FiEdit2 } from 'react-icons/fi';
 import { Link as RouterLink } from 'react-router-dom';
 import TransferModal from './TransferModal';
 import CheckinModal from './CheckinModal';
+import ToolQRCode from './ToolQRCode';
 
 const ToolTable = ({ tools, onDelete, onTransfer, onCheckin, canUpdate, onEdit, currentUserId }) => {
   const { isOpen: isTransferOpen, onOpen: onTransferOpen, onClose: onTransferClose } = useDisclosure();
@@ -67,6 +68,7 @@ const ToolTable = ({ tools, onDelete, onTransfer, onCheckin, canUpdate, onEdit, 
                 <Th>Серийный номер</Th>
                 <Th>Статус</Th>
                 <Th>Владелец</Th>
+                <Th>QR-код</Th>
                 <Th>Действия</Th>
               </Tr>
             </Thead>
@@ -111,6 +113,9 @@ const ToolTable = ({ tools, onDelete, onTransfer, onCheckin, canUpdate, onEdit, 
                       ) : (
                         <Text color="gray.500">—</Text>
                       )}
+                    </Td>
+                    <Td>
+                      <ToolQRCode tool={tool} size={50} showExpandButton={true} />
                     </Td>
                     <Td>
                       <HStack spacing={2}>

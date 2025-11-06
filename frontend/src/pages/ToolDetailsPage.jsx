@@ -30,6 +30,7 @@ import { FiArrowLeft, FiClock, FiEdit2, FiTool } from 'react-icons/fi';
 import api from '../services/api';
 import useAuthStore from '../store/authStore';
 import EditToolModal from '../components/EditToolModal';
+import ToolQRCode from '../components/ToolQRCode';
 
 const ToolDetailsPage = () => {
   const { id } = useParams();
@@ -117,51 +118,68 @@ const ToolDetailsPage = () => {
           <VStack spacing={6} align="stretch">
             <Grid templateColumns={{ base: '1fr', md: '300px 1fr' }} gap={6}>
               <GridItem>
-                {tool.imageUrl ? (
-                  <Image
-                    src={tool.imageUrl}
-                    alt={tool.name}
-                    w="100%"
-                    h="300px"
-                    objectFit="cover"
-                    borderRadius="md"
-                    border="1px solid"
-                    borderColor="gray.200"
-                    fallback={
-                      <Center
-                        w="100%"
-                        h="300px"
-                        bg="gray.100"
-                        borderRadius="md"
-                        border="1px solid"
-                        borderColor="gray.200"
-                      >
-                        <VStack spacing={2}>
-                          <FiTool size={48} color="gray" />
-                          <Text color="gray.500" fontSize="sm">
-                            Нет изображения
-                          </Text>
-                        </VStack>
-                      </Center>
-                    }
-                  />
-                ) : (
-                  <Center
-                    w="100%"
-                    h="300px"
-                    bg="gray.100"
+                <VStack spacing={4} align="stretch">
+                  {tool.imageUrl ? (
+                    <Image
+                      src={tool.imageUrl}
+                      alt={tool.name}
+                      w="100%"
+                      h="300px"
+                      objectFit="cover"
+                      borderRadius="md"
+                      border="1px solid"
+                      borderColor="gray.200"
+                      fallback={
+                        <Center
+                          w="100%"
+                          h="300px"
+                          bg="gray.100"
+                          borderRadius="md"
+                          border="1px solid"
+                          borderColor="gray.200"
+                        >
+                          <VStack spacing={2}>
+                            <FiTool size={48} color="gray" />
+                            <Text color="gray.500" fontSize="sm">
+                              Нет изображения
+                            </Text>
+                          </VStack>
+                        </Center>
+                      }
+                    />
+                  ) : (
+                    <Center
+                      w="100%"
+                      h="300px"
+                      bg="gray.100"
+                      borderRadius="md"
+                      border="1px solid"
+                      borderColor="gray.200"
+                    >
+                      <VStack spacing={2}>
+                        <FiTool size={48} color="gray" />
+                        <Text color="gray.500" fontSize="sm">
+                          Нет изображения
+                        </Text>
+                      </VStack>
+                    </Center>
+                  )}
+                  
+                  <Box
+                    p={4}
+                    bg="gray.50"
                     borderRadius="md"
                     border="1px solid"
                     borderColor="gray.200"
                   >
-                    <VStack spacing={2}>
-                      <FiTool size={48} color="gray" />
-                      <Text color="gray.500" fontSize="sm">
-                        Нет изображения
-                      </Text>
-                    </VStack>
-                  </Center>
-                )}
+                    <Text fontSize="sm" fontWeight="bold" mb={3} textAlign="center">
+                      QR-код инструмента
+                    </Text>
+                    <Center>
+                      <ToolQRCode tool={tool} size={200} showExpandButton={true} />
+                    </Center>
+                  </Box>
+                </VStack>
               </GridItem>
 
               <GridItem>

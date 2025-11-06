@@ -22,6 +22,7 @@ import { FiMoreVertical, FiTrash2, FiSend, FiPackage, FiEye, FiEdit2 } from 'rea
 import { Link as RouterLink } from 'react-router-dom';
 import TransferModal from './TransferModal';
 import CheckinModal from './CheckinModal';
+import ToolQRCode from './ToolQRCode';
 
 const ToolCard = ({ tool, onDelete, onTransfer, onCheckin, canUpdate, onEdit, currentUserId }) => {
   const { isOpen: isTransferOpen, onOpen: onTransferOpen, onClose: onTransferClose } = useDisclosure();
@@ -129,27 +130,35 @@ const ToolCard = ({ tool, onDelete, onTransfer, onCheckin, canUpdate, onEdit, cu
               )}
             </HStack>
 
-            {getStatusBadge(tool.status)}
-
-            {tool.currentUser ? (
+            <HStack justify="space-between" align="start">
+              <VStack align="start" spacing={1} flex={1}>
+                {getStatusBadge(tool.status)}
+                
+                {tool.currentUser ? (
+                  <Box>
+                    <Text fontSize="sm" color="gray.600">
+                      Владелец:
+                    </Text>
+                    <Text fontSize="sm" fontWeight="medium">
+                      {tool.currentUser.name}
+                    </Text>
+                  </Box>
+                ) : (
+                  <Box>
+                    <Text fontSize="sm" color="gray.600">
+                      Склад:
+                    </Text>
+                    <Text fontSize="sm" fontWeight="medium">
+                      {tool.warehouse?.name || 'Не указан'}
+                    </Text>
+                  </Box>
+                )}
+              </VStack>
+              
               <Box>
-                <Text fontSize="sm" color="gray.600">
-                  Владелец:
-                </Text>
-                <Text fontSize="sm" fontWeight="medium">
-                  {tool.currentUser.name}
-                </Text>
+                <ToolQRCode tool={tool} size={80} showExpandButton={true} />
               </Box>
-            ) : (
-              <Box>
-                <Text fontSize="sm" color="gray.600">
-                  Склад:
-                </Text>
-                <Text fontSize="sm" fontWeight="medium">
-                  {tool.warehouse?.name || 'Не указан'}
-                </Text>
-              </Box>
-            )}
+            </HStack>
 
             {tool.description && (
               <Text fontSize="sm" color="gray.600" noOfLines={2}>

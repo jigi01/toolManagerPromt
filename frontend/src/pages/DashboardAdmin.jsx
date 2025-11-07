@@ -230,7 +230,7 @@ const DashboardAdmin = () => {
               <Heading size="md" display="flex" alignItems="center" gap={2}>
                 <FiActivity /> Лента Активности
               </Heading>
-              <Badge colorScheme="blue">Последние 10</Badge>
+              <Badge colorScheme="blue">Последние перемещения</Badge>
             </HStack>
           </CardHeader>
           <CardBody>

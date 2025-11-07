@@ -28,8 +28,8 @@ export const createTool = async (req, res) => {
 
 export const getTools = async (req, res) => {
   try {
-    const { status, currentUserId, warehouseId, categoryId } = req.query;
-    const tools = await toolService.getAllTools(req.user.companyId, { status, currentUserId, warehouseId, categoryId });
+    const { status, currentUserId, warehouseId, categoryId, search } = req.query;
+    const tools = await toolService.getAllTools(req.user.companyId, { status, currentUserId, warehouseId, categoryId, search });
 
     res.json({ tools });
   } catch (error) {

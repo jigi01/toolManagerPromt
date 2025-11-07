@@ -11,9 +11,12 @@ import {
   Card,
   CardBody,
   HStack,
-  SimpleGrid
+  SimpleGrid,
+  Input,
+  FormControl,
+  Select
 } from '@chakra-ui/react';
-import { FiPackage, FiGrid, FiList } from 'react-icons/fi';
+import { FiPackage, FiGrid, FiList, FiSearch, FiX } from 'react-icons/fi';
 import api from '../services/api';
 import useAuthStore from '../store/authStore';
 import ToolCard from '../components/ToolCard';
@@ -22,10 +25,13 @@ import EditToolModal from '../components/EditToolModal';
 
 const DashboardEmployee = () => {
   const [myTools, setMyTools] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('grid');
   const [editingTool, setEditingTool] = useState(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
   const toast = useToast();
   const { user, hasPermission } = useAuthStore();
 
@@ -36,11 +42,18 @@ const DashboardEmployee = () => {
 
   useEffect(() => {
     fetchMyTools();
-  }, [user]);
+    fetchCategories();
+  }, [user, searchQuery, filterCategory]);
 
   const fetchMyTools = async () => {
     try {
-      const response = await api.get(`/tools?currentUserId=${user.id}`);
+      const params = new URLSearchParams();
+      params.append('currentUserId', user.id);
+      if (filterCategory) params.append('categoryId', filterCategory);
+      if (searchQuery) params.append('search', searchQuery);
+      
+      const queryString = params.toString();
+      const response = await api.get(`/tools?${queryString}`);
       setMyTools(response.data.tools);
     } catch (error) {
       toast({
@@ -52,6 +65,15 @@ const DashboardEmployee = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const response = await api.get('/categories');
+      setCategories(response.data.categories);
+    } catch (error) {
+      console.error('Не удалось загрузить категории:', error);
     }
   };
 
@@ -170,6 +192,64 @@ const DashboardEmployee = () => {
           </HStack>
         )}
       </HStack>
+
+      {myTools.length > 0 && (
+        <VStack spacing={4} align="stretch">
+          <HStack spacing={4}>
+            <Box flex="1">
+              <FormControl>
+                <Box position="relative">
+                  <Input
+                    placeholder="Поиск по названию..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    pl={10}
+                  />
+                  <Box position="absolute" left={3} top="50%" transform="translateY(-50%)">
+                    <FiSearch color="gray" />
+                  </Box>
+                  {searchQuery && (
+                    <Box 
+                      position="absolute" 
+                      right={3} 
+                      top="50%" 
+                      transform="translateY(-50%)"
+                      cursor="pointer"
+                      onClick={() => setSearchQuery('')}
+                    >
+                      <FiX color="gray" />
+                    </Box>
+                  )}
+                </Box>
+              </FormControl>
+            </Box>
+            <Select
+              placeholder="Все категории"
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              maxW="250px"
+            >
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </Select>
+            {(filterCategory || searchQuery) && (
+              <Button
+                size="md"
+                variant="ghost"
+                onClick={() => {
+                  setFilterCategory('');
+                  setSearchQuery('');
+                }}
+              >
+                Сбросить
+              </Button>
+            )}
+          </HStack>
+        </VStack>
+      )}
 
       {myTools.length === 0 ? (
         <Card>

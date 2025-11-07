@@ -92,6 +92,13 @@ export const getAllTools = async (companyId, filters = {}) => {
     where.categoryId = filters.categoryId;
   }
 
+  if (filters.search) {
+    where.name = {
+      contains: filters.search,
+      mode: 'insensitive'
+    };
+  }
+
   const tools = await prisma.tool.findMany({
     where,
     include: {

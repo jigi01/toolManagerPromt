@@ -18,7 +18,7 @@ export const register = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
-    res.status(201).json({ user });
+    res.status(201).json({ user, token });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -41,7 +41,7 @@ export const login = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
-    res.json({ user });
+    res.json({ user, token });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

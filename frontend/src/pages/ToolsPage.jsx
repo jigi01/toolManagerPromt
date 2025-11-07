@@ -27,7 +27,7 @@ import {
   Switch,
   FormHelperText
 } from '@chakra-ui/react';
-import { FiPlus, FiGrid, FiList } from 'react-icons/fi';
+import { FiPlus, FiGrid, FiList, FiSearch, FiX } from 'react-icons/fi';
 import api from '../services/api';
 import useAuthStore from '../store/authStore';
 import ToolCard from '../components/ToolCard';
@@ -50,6 +50,9 @@ const ToolsPage = () => {
     categoryId: ''
   });
   const [filterStatus, setFilterStatus] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+  const [filterWarehouse, setFilterWarehouse] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState('grid');
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
@@ -69,12 +72,18 @@ const ToolsPage = () => {
     fetchTools();
     fetchWarehouses();
     fetchCategories();
-  }, [filterStatus]);
+  }, [filterStatus, filterCategory, filterWarehouse, searchQuery]);
 
   const fetchTools = async () => {
     try {
-      const queryParams = filterStatus ? `?status=${filterStatus}` : '';
-      const response = await api.get(`/tools${queryParams}`);
+      const params = new URLSearchParams();
+      if (filterStatus) params.append('status', filterStatus);
+      if (filterCategory) params.append('categoryId', filterCategory);
+      if (filterWarehouse) params.append('warehouseId', filterWarehouse);
+      if (searchQuery) params.append('search', searchQuery);
+      
+      const queryString = params.toString();
+      const response = await api.get(`/tools${queryString ? `?${queryString}` : ''}`);
       setTools(response.data.tools);
     } catch (error) {
       toast({
@@ -305,36 +314,110 @@ const ToolsPage = () => {
         )}
       </HStack>
 
-      <HStack justify="space-between">
-        <Select
-          placeholder="Все статусы"
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          maxW="250px"
-        >
-          <option value="AVAILABLE">На складе</option>
-          <option value="IN_USE">В использовании</option>
-        </Select>
-
-        <HStack>
-          <Button
-            leftIcon={<FiGrid />}
-            variant={viewMode === 'grid' ? 'solid' : 'ghost'}
-            onClick={() => setViewMode('grid')}
-            size="sm"
-          >
-            Карточки
-          </Button>
-          <Button
-            leftIcon={<FiList />}
-            variant={viewMode === 'table' ? 'solid' : 'ghost'}
-            onClick={() => setViewMode('table')}
-            size="sm"
-          >
-            Таблица
-          </Button>
+      <VStack spacing={4} align="stretch">
+        <HStack spacing={4}>
+          <Box flex="1">
+            <FormControl>
+              <HStack>
+                <Box position="relative" flex="1">
+                  <Input
+                    placeholder="Поиск по названию..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    pl={10}
+                  />
+                  <Box position="absolute" left={3} top="50%" transform="translateY(-50%)">
+                    <FiSearch color="gray" />
+                  </Box>
+                  {searchQuery && (
+                    <Box 
+                      position="absolute" 
+                      right={3} 
+                      top="50%" 
+                      transform="translateY(-50%)"
+                      cursor="pointer"
+                      onClick={() => setSearchQuery('')}
+                    >
+                      <FiX color="gray" />
+                    </Box>
+                  )}
+                </Box>
+              </HStack>
+            </FormControl>
+          </Box>
+          <HStack>
+            <Button
+              leftIcon={<FiGrid />}
+              variant={viewMode === 'grid' ? 'solid' : 'ghost'}
+              onClick={() => setViewMode('grid')}
+              size="sm"
+            >
+              Карточки
+            </Button>
+            <Button
+              leftIcon={<FiList />}
+              variant={viewMode === 'table' ? 'solid' : 'ghost'}
+              onClick={() => setViewMode('table')}
+              size="sm"
+            >
+              Таблица
+            </Button>
+          </HStack>
         </HStack>
-      </HStack>
+
+        <HStack spacing={4}>
+          <Select
+            placeholder="Все статусы"
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            maxW="200px"
+          >
+            <option value="AVAILABLE">На складе</option>
+            <option value="IN_USE">В использовании</option>
+          </Select>
+
+          <Select
+            placeholder="Все категории"
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            maxW="200px"
+          >
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </Select>
+
+          <Select
+            placeholder="Все склады"
+            value={filterWarehouse}
+            onChange={(e) => setFilterWarehouse(e.target.value)}
+            maxW="200px"
+          >
+            {warehouses.map((warehouse) => (
+              <option key={warehouse.id} value={warehouse.id}>
+                {warehouse.name}
+              </option>
+            ))}
+          </Select>
+
+          {(filterStatus || filterCategory || filterWarehouse || searchQuery) && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setFilterStatus('');
+                setFilterCategory('');
+                setFilterWarehouse('');
+                setSearchQuery('');
+              }}
+            >
+              Сбросить фильтры
+            </Button>
+          )}
+        </HStack>
+      </VStack>
 
       {viewMode === 'grid' ? (
         <SimpleGrid columns={{ base: 1, md: 2, lg: 3, xl: 4 }} spacing={6}>

@@ -37,6 +37,18 @@ export const getTools = async (req, res) => {
   }
 };
 
+export const getMyTools = async (req, res) => {
+  try {
+    const tools = await toolService.getAllTools(req.user.companyId, { 
+      currentUserId: req.user.id 
+    });
+
+    res.json({ tools });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export const getTool = async (req, res) => {
   try {
     const { id } = req.params;

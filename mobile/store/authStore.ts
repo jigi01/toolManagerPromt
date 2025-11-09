@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 import api from '../services/api';
 import { User } from '../types';
 
@@ -45,16 +46,18 @@ const useAuthStore = create<AuthState>((set, get) => ({
 
   checkAuth: async () => {
     try {
-      const token = await AsyncStorage.getItem('token');
-      if (!token) {
-        set({
-          user: null,
-          isAuthenticated: false,
-          isBoss: false,
-          permissions: [],
-          loading: false,
-        });
-        return false;
+      if (Platform.OS !== 'web') {
+        const token = await AsyncStorage.getItem('token');
+        if (!token) {
+          set({
+            user: null,
+            isAuthenticated: false,
+            isBoss: false,
+            permissions: [],
+            loading: false,
+          });
+          return false;
+        }
       }
 
       const response = await api.get('/auth/me');
@@ -67,7 +70,9 @@ const useAuthStore = create<AuthState>((set, get) => ({
       });
       return true;
     } catch (error) {
-      await AsyncStorage.removeItem('token');
+      if (Platform.OS !== 'web') {
+        await AsyncStorage.removeItem('token');
+      }
       set({
         user: null,
         isAuthenticated: false,
@@ -83,7 +88,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
     const response = await api.post('/auth/login', { email, password });
     const { user, token } = response.data;
     
-    if (token) {
+    if (token && Platform.OS !== 'web') {
       await AsyncStorage.setItem('token', token);
     }
     
@@ -100,7 +105,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
     const response = await api.post('/auth/register', data);
     const { user, token } = response.data;
     
-    if (token) {
+    if (token && Platform.OS !== 'web') {
       await AsyncStorage.setItem('token', token);
     }
     
@@ -119,7 +124,9 @@ const useAuthStore = create<AuthState>((set, get) => ({
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      await AsyncStorage.removeItem('token');
+      if (Platform.OS !== 'web') {
+        await AsyncStorage.removeItem('token');
+      }
       set({
         user: null,
         isAuthenticated: false,

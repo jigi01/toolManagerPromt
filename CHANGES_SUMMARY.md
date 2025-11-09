@@ -34,13 +34,13 @@
 #### `/mobile/services/api.ts`
 1. **Изменен API_URL:**
    - Было: `http://localhost:5001/api`
-   - Стало: `http://192.168.0.128:5000/api`
+   - Стало: `http://192.168.0.128:5001/api`
 
 2. **Добавлена поддержка переменных окружения:**
    ```typescript
    const API_URL = Constants.expoConfig?.extra?.apiUrl || 
                    process.env.EXPO_PUBLIC_API_URL || 
-                   'http://192.168.0.128:5000/api';
+                   'http://192.168.0.128:5001/api';
    ```
 
 3. **Отключен withCredentials:**
@@ -52,13 +52,13 @@
 Добавлена секция `extra` с настройкой API URL:
 ```json
 "extra": {
-  "apiUrl": "http://192.168.0.128:5000/api"
+  "apiUrl": "http://192.168.0.128:5001/api"
 }
 ```
 
 #### `/mobile/.env` (новый файл)
 ```
-EXPO_PUBLIC_API_URL=http://192.168.0.128:5000/api
+EXPO_PUBLIC_API_URL=http://192.168.0.128:5001/api
 ```
 
 #### `/mobile/.env.example` (новый файл)
@@ -88,8 +88,8 @@ pnpm start
 
 ### 3. Убедитесь:
 - ✅ Телефон и компьютер в одной Wi-Fi сети
-- ✅ Backend доступен по `http://192.168.0.128:5000`
-- ✅ Firewall не блокирует порт 5000
+- ✅ Backend доступен по `http://192.168.0.128:5001`
+- ✅ Firewall не блокирует порт 5001
 
 ## Если IP изменился
 
@@ -103,7 +103,7 @@ Backend автоматически разрешит любые адреса из
 
 ```bash
 # Проверка backend
-curl http://192.168.0.128:5000/api/health
+curl http://192.168.0.128:5001/api/health
 
 # Ожидаемый ответ:
 # {"status":"OK","message":"ToolManager API is running"}
@@ -111,7 +111,7 @@ curl http://192.168.0.128:5000/api/health
 
 ## Технические детали
 
-- **Порт backend**: 5000 (исправлено с 5001)
+- **Порт backend**: 5001
 - **IP адрес**: 192.168.0.128
 - **Auth метод**: Bearer токены (для mobile), cookies (для web)
 - **CORS**: Разрешены все адреса 192.168.x.x

@@ -22,7 +22,7 @@
 
 1. **API URL изменен на IP-адрес**:
    ```typescript
-   const API_URL = 'http://192.168.0.128:5000/api';
+   const API_URL = 'http://192.168.0.128:5001/api';
    ```
 
 2. **Отключен withCredentials**:
@@ -58,14 +58,14 @@ ip addr show
 **Mobile:**
 - Отредактируйте `/mobile/.env`:
   ```
-  EXPO_PUBLIC_API_URL=http://ВАШ_IP:5000/api
+  EXPO_PUBLIC_API_URL=http://ВАШ_IP:5001/api
   ```
 - Или отредактируйте `/mobile/app.json`:
   ```json
   {
     "expo": {
       "extra": {
-        "apiUrl": "http://ВАШ_IP:5000/api"
+        "apiUrl": "http://ВАШ_IP:5001/api"
       }
     }
   }
@@ -82,8 +82,8 @@ npm run dev
 ```
 
 Backend будет доступен на:
-- `http://localhost:5000/api` (для веб-приложения)
-- `http://192.168.0.128:5000/api` (для мобильного приложения)
+- `http://localhost:5001/api` (для веб-приложения)
+- `http://192.168.0.128:5001/api` (для мобильного приложения)
 
 ### 4. Запустите мобильное приложение
 
@@ -104,10 +104,10 @@ pnpm start
 
 ```bash
 # С компьютера (localhost)
-curl http://localhost:5000/api/health
+curl http://localhost:5001/api/health
 
 # С телефона или другого устройства (по IP)
-curl http://192.168.0.128:5000/api/health
+curl http://192.168.0.128:5001/api/health
 ```
 
 Ответ должен быть:
@@ -127,12 +127,12 @@ curl http://192.168.0.128:5000/api/health
 ### Backend не доступен по IP
 
 1. **Проверьте firewall:**
-   - Windows: добавьте правило для порта 5000
+   - Windows: добавьте правило для порта 5001
    - macOS: System Preferences → Security & Privacy → Firewall
-   - Linux: `sudo ufw allow 5000`
+   - Linux: `sudo ufw allow 5001`
 
 2. **Проверьте, что backend слушает на 0.0.0.0:**
-   В логах должно быть: "Сервер запущен на порту 5000 и доступен на всех сетевых интерфейсах"
+   В логах должно быть: "Сервер запущен на порту 5001 и доступен на всех сетевых интерфейсах"
 
 ### Ошибки CORS
 
@@ -150,7 +150,7 @@ curl http://192.168.0.128:5000/api/health
 ## Текущая конфигурация
 
 - **IP адрес**: `192.168.0.128`
-- **Backend порт**: `5000`
-- **API URL**: `http://192.168.0.128:5000/api`
+- **Backend порт**: `5001`
+- **API URL**: `http://192.168.0.128:5001/api`
 - **Auth метод**: Bearer токены для mobile, cookies для web
 - **CORS**: Разрешены все адреса 192.168.x.x

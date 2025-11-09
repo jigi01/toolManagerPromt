@@ -24,7 +24,7 @@ ip addr show
 
 Отредактируйте файл `.env` в корне папки mobile:
 ```
-EXPO_PUBLIC_API_URL=http://ВАШ_IP:5000/api
+EXPO_PUBLIC_API_URL=http://ВАШ_IP:5001/api
 ```
 
 Или обновите `app.json`:
@@ -32,7 +32,7 @@ EXPO_PUBLIC_API_URL=http://ВАШ_IP:5000/api
 {
   "expo": {
     "extra": {
-      "apiUrl": "http://ВАШ_IP:5000/api"
+      "apiUrl": "http://ВАШ_IP:5001/api"
     }
   }
 }
@@ -47,11 +47,11 @@ cd backend
 npm run dev
 ```
 
-Backend должен быть доступен по адресу `http://ВАШ_IP:5000`
+Backend должен быть доступен по адресу `http://ВАШ_IP:5001`
 
 ### 4. Проверьте firewall
 
-Убедитесь, что порт 5000 открыт в firewall вашего компьютера.
+Убедитесь, что порт 5001 открыт в firewall вашего компьютера.
 
 ### 5. Запустите приложение
 
@@ -69,8 +69,8 @@ pnpm ios
 
 ## Текущая конфигурация
 
-- **API URL**: `http://192.168.0.128:5000/api`
-- **Backend Port**: 5000
+- **API URL**: `http://192.168.0.128:5001/api`
+- **Backend Port**: 5001
 - **Auth**: Bearer токены (хранятся в AsyncStorage)
 
 ## Troubleshooting

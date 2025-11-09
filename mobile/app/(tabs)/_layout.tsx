@@ -23,16 +23,16 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Dashboard',
+          title: 'Главная',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
+            <Ionicons name="qr-code" size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="tools"
         options={{
-          title: 'Tools',
+          title: 'Инструменты',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="construct" size={size} color={color} />
           ),
@@ -40,32 +40,24 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'Настройки',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="settings" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="users"
         options={{
-          title: 'Users',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="people" size={size} color={color} />
-          ),
-          href: hasPermission(PERMISSIONS.USER_READ) ? '/(tabs)/users' : null,
+          href: null,
         }}
       />
       <Tabs.Screen
         name="warehouses"
         options={{
-          title: 'Warehouses',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="business" size={size} color={color} />
-          ),
-          href: hasPermission(PERMISSIONS.WAREHOUSE_READ) ? '/(tabs)/warehouses' : null,
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: 'Settings',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings" size={size} color={color} />
-          ),
+          href: null,
         }}
       />
     </Tabs>

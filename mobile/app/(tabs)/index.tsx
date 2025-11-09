@@ -12,26 +12,21 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import useAuthStore from '../../store/authStore';
 import api from '../../services/api';
-import { Tool, User } from '../../types';
+import { Tool } from '../../types';
 
-export default function DashboardScreen() {
+export default function HomeScreen() {
   const router = useRouter();
-  const { user, isBoss } = useAuthStore();
-  const [stats, setStats] = useState<any>(null);
+  const { user } = useAuthStore();
   const [myTools, setMyTools] = useState<Tool[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchDashboardData = async () => {
+  const fetchMyTools = async () => {
     try {
-      const [statsRes, toolsRes] = await Promise.all([
-        api.get('/tools/stats'),
-        api.get('/tools/my'),
-      ]);
-      setStats(statsRes.data);
-      setMyTools(toolsRes.data.tools || []);
+      const response = await api.get('/tools/my');
+      setMyTools(response.data.tools || []);
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      console.error('Error fetching my tools:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -39,12 +34,12 @@ export default function DashboardScreen() {
   };
 
   useEffect(() => {
-    fetchDashboardData();
+    fetchMyTools();
   }, []);
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchDashboardData();
+    fetchMyTools();
   };
 
   if (loading) {
@@ -58,46 +53,43 @@ export default function DashboardScreen() {
   return (
     <ScrollView
       style={styles.container}
+      contentContainerStyle={styles.contentContainer}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
       <View style={styles.header}>
-        <Text style={styles.greeting}>Welcome, {user?.name}!</Text>
-        <Text style={styles.role}>{user?.role?.name}</Text>
+        <Text style={styles.greeting}>Привет, {user?.name}!</Text>
+        <Text style={styles.subtitle}>Быстрые действия с инструментами</Text>
       </View>
 
-      {isBoss && stats && (
-        <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <Ionicons name="construct" size={32} color="#3182CE" />
-            <Text style={styles.statNumber}>{stats.totalTools || 0}</Text>
-            <Text style={styles.statLabel}>Total Tools</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Ionicons name="people" size={32} color="#38A169" />
-            <Text style={styles.statNumber}>{stats.totalUsers || 0}</Text>
-            <Text style={styles.statLabel}>Total Users</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Ionicons name="business" size={32} color="#D69E2E" />
-            <Text style={styles.statNumber}>{stats.totalWarehouses || 0}</Text>
-            <Text style={styles.statLabel}>Warehouses</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Ionicons name="checkmark-circle" size={32} color="#805AD5" />
-            <Text style={styles.statNumber}>{stats.assignedTools || 0}</Text>
-            <Text style={styles.statLabel}>Assigned</Text>
-          </View>
+      <TouchableOpacity
+        style={styles.scanButton}
+        onPress={() => router.push('/scanner')}
+        activeOpacity={0.8}
+      >
+        <View style={styles.scanButtonIcon}>
+          <Ionicons name="qr-code-outline" size={64} color="white" />
         </View>
-      )}
+        <Text style={styles.scanButtonText}>СКАНИРОВАТЬ QR-КОД</Text>
+        <Text style={styles.scanButtonSubtext}>
+          Наведите камеру на QR-код инструмента
+        </Text>
+      </TouchableOpacity>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>My Tools ({myTools.length})</Text>
+      <View style={styles.myToolsSection}>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="briefcase" size={24} color="#2D3748" />
+          <Text style={styles.sectionTitle}>Мои инструменты ({myTools.length})</Text>
+        </View>
+
         {myTools.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="cube-outline" size={48} color="#CBD5E0" />
-            <Text style={styles.emptyText}>No tools assigned</Text>
+            <Text style={styles.emptyText}>У вас нет инструментов</Text>
+            <Text style={styles.emptySubtext}>
+              Отсканируйте QR-код, чтобы взять инструмент
+            </Text>
           </View>
         ) : (
           myTools.map((tool) => (
@@ -106,6 +98,9 @@ export default function DashboardScreen() {
               style={styles.toolCard}
               onPress={() => router.push(`/tool/${tool.id}`)}
             >
+              <View style={styles.toolIcon}>
+                <Ionicons name="construct" size={28} color="#3182CE" />
+              </View>
               <View style={styles.toolInfo}>
                 <Text style={styles.toolName}>{tool.name}</Text>
                 {tool.serialNumber && (
@@ -120,26 +115,6 @@ export default function DashboardScreen() {
           ))
         )}
       </View>
-
-      {isBoss && (
-        <View style={styles.quickActions}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => router.push('/(tabs)/tools')}
-          >
-            <Ionicons name="add-circle" size={24} color="#3182CE" />
-            <Text style={styles.actionText}>Add New Tool</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => router.push('/(tabs)/users')}
-          >
-            <Ionicons name="person-add" size={24} color="#3182CE" />
-            <Text style={styles.actionText}>Invite User</Text>
-          </TouchableOpacity>
-        </View>
-      )}
     </ScrollView>
   );
 }
@@ -148,6 +123,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  contentContainer: {
+    paddingBottom: 32,
   },
   centerContainer: {
     flex: 1,
@@ -158,87 +136,107 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#3182CE',
     padding: 24,
-    paddingTop: 48,
+    paddingTop: 16,
+    paddingBottom: 32,
   },
   greeting: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     color: 'white',
-    marginBottom: 4,
+    marginBottom: 8,
   },
-  role: {
+  subtitle: {
     fontSize: 16,
     color: '#BEE3F8',
   },
-  statsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    padding: 16,
-    gap: 12,
-  },
-  statCard: {
-    flex: 1,
-    minWidth: '45%',
-    backgroundColor: 'white',
-    padding: 16,
-    borderRadius: 12,
+  scanButton: {
+    backgroundColor: '#3182CE',
+    marginHorizontal: 16,
+    marginTop: -24,
+    borderRadius: 20,
+    padding: 32,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
-  statNumber: {
-    fontSize: 28,
+  scanButtonIcon: {
+    marginBottom: 16,
+  },
+  scanButtonText: {
+    fontSize: 22,
     fontWeight: 'bold',
-    color: '#2D3748',
-    marginTop: 8,
+    color: 'white',
+    marginBottom: 8,
+    letterSpacing: 1,
   },
-  statLabel: {
+  scanButtonSubtext: {
     fontSize: 14,
-    color: '#718096',
-    marginTop: 4,
+    color: '#BEE3F8',
+    textAlign: 'center',
   },
-  section: {
+  myToolsSection: {
     padding: 16,
+    marginTop: 24,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 12,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#2D3748',
-    marginBottom: 12,
   },
   emptyState: {
     backgroundColor: 'white',
     padding: 48,
-    borderRadius: 12,
+    borderRadius: 16,
     alignItems: 'center',
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: '600',
     color: '#718096',
-    marginTop: 12,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#A0AEC0',
+    textAlign: 'center',
   },
   toolCard: {
     backgroundColor: 'white',
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     marginBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+  },
+  toolIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    backgroundColor: '#EBF8FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
   },
   toolInfo: {
     flex: 1,
   },
   toolName: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
     color: '#2D3748',
     marginBottom: 4,
@@ -249,29 +247,8 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   toolCategory: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#3182CE',
-  },
-  quickActions: {
-    padding: 16,
-  },
-  actionButton: {
-    backgroundColor: 'white',
-    padding: 16,
-    borderRadius: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  actionText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2D3748',
-    marginLeft: 12,
+    fontWeight: '500',
   },
 });

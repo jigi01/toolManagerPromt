@@ -26,12 +26,12 @@ export default function SettingsScreen() {
 
   const handleLogout = () => {
     Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
+      'Выйти',
+      'Вы уверены, что хотите выйти?',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Отмена', style: 'cancel' },
         {
-          text: 'Logout',
+          text: 'Выйти',
           style: 'destructive',
           onPress: async () => {
             await logout();
@@ -44,17 +44,17 @@ export default function SettingsScreen() {
 
   const handleChangePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert('Ошибка', 'Заполните все поля');
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      Alert.alert('Error', 'New passwords do not match');
+      Alert.alert('Ошибка', 'Новые пароли не совпадают');
       return;
     }
 
     if (newPassword.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+      Alert.alert('Ошибка', 'Пароль должен быть не менее 6 символов');
       return;
     }
 
@@ -64,13 +64,13 @@ export default function SettingsScreen() {
         currentPassword,
         newPassword,
       });
-      Alert.alert('Success', 'Password changed successfully');
+      Alert.alert('Успех', 'Пароль успешно изменен');
       setShowPasswordModal(false);
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to change password');
+      Alert.alert('Ошибка', error.response?.data?.error || 'Не удалось изменить пароль');
     } finally {
       setSaving(false);
     }
@@ -94,7 +94,7 @@ export default function SettingsScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Account</Text>
+        <Text style={styles.sectionTitle}>Аккаунт</Text>
         
         <TouchableOpacity
           style={styles.settingItem}
@@ -102,47 +102,22 @@ export default function SettingsScreen() {
         >
           <View style={styles.settingItemLeft}>
             <Ionicons name="key" size={20} color="#718096" />
-            <Text style={styles.settingItemText}>Change Password</Text>
+            <Text style={styles.settingItemText}>Изменить пароль</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color="#CBD5E0" />
         </TouchableOpacity>
       </View>
 
-      {isBoss && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Management</Text>
-          
-          <TouchableOpacity
-            style={styles.settingItem}
-            onPress={() => router.push('/roles')}
-          >
-            <View style={styles.settingItemLeft}>
-              <Ionicons name="shield-checkmark" size={20} color="#718096" />
-              <Text style={styles.settingItemText}>Manage Roles</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#CBD5E0" />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.settingItem}>
-            <View style={styles.settingItemLeft}>
-              <Ionicons name="layers" size={20} color="#718096" />
-              <Text style={styles.settingItemText}>Manage Categories</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#CBD5E0" />
-          </TouchableOpacity>
-        </View>
-      )}
-
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>About</Text>
+        <Text style={styles.sectionTitle}>О приложении</Text>
         
         <View style={styles.infoItem}>
-          <Text style={styles.infoLabel}>Company</Text>
+          <Text style={styles.infoLabel}>Компания</Text>
           <Text style={styles.infoValue}>{user?.company?.name}</Text>
         </View>
 
         <View style={styles.infoItem}>
-          <Text style={styles.infoLabel}>Version</Text>
+          <Text style={styles.infoLabel}>Версия</Text>
           <Text style={styles.infoValue}>1.0.0</Text>
         </View>
       </View>
@@ -150,7 +125,7 @@ export default function SettingsScreen() {
       <View style={styles.section}>
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Ionicons name="log-out" size={20} color="#E53E3E" />
-          <Text style={styles.logoutButtonText}>Logout</Text>
+          <Text style={styles.logoutButtonText}>Выйти</Text>
         </TouchableOpacity>
       </View>
 
@@ -163,22 +138,22 @@ export default function SettingsScreen() {
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setShowPasswordModal(false)}>
-              <Text style={styles.modalCancel}>Cancel</Text>
+              <Text style={styles.modalCancel}>Отмена</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Change Password</Text>
+            <Text style={styles.modalTitle}>Изменить пароль</Text>
             <TouchableOpacity onPress={handleChangePassword} disabled={saving}>
               <Text style={[styles.modalSave, saving && styles.modalSaveDisabled]}>
-                {saving ? 'Saving...' : 'Save'}
+                {saving ? 'Сохранение...' : 'Сохранить'}
               </Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.modalContent}>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Current Password</Text>
+              <Text style={styles.label}>Текущий пароль</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Enter current password"
+                placeholder="Введите текущий пароль"
                 value={currentPassword}
                 onChangeText={setCurrentPassword}
                 secureTextEntry
@@ -186,10 +161,10 @@ export default function SettingsScreen() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>New Password</Text>
+              <Text style={styles.label}>Новый пароль</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Enter new password"
+                placeholder="Введите новый пароль"
                 value={newPassword}
                 onChangeText={setNewPassword}
                 secureTextEntry
@@ -197,10 +172,10 @@ export default function SettingsScreen() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Confirm New Password</Text>
+              <Text style={styles.label}>Подтвердите пароль</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Confirm new password"
+                placeholder="Повторите новый пароль"
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 secureTextEntry

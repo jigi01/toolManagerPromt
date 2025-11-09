@@ -21,7 +21,7 @@ const PORT = process.env.PORT || 5001;
 const allowedOrigins = [
   process.env.FRONTEND_URL || 'http://localhost:5173', // Твой WEB-frontend
   'http://localhost:8081',  // Твой MOBILE-frontend (Expo web)
-  'http://192.168.0.128:8081', // Expo mobile на устройстве
+  'http://192.168.0.191:8081', // Expo mobile на устройстве
 ];
 
 app.use(cors({
@@ -66,6 +66,6 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Сервер запущен на порту ${PORT} и доступен на всех сетевых интерфейсах`);
-  console.log(`📱 Мобильное приложение: http://192.168.0.128:${PORT}/api`);
+  console.log(`📱 Мобильное приложение: http://192.168.0.191:${PORT}/api`);
   console.log(`💻 Веб-приложение: http://localhost:${PORT}/api`);
 });

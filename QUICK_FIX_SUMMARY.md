@@ -9,9 +9,9 @@
 **Изменено в:**
 - `backend/.env` → `PORT=5001`
 - `backend/src/server.js` → `const PORT = process.env.PORT || 5001`
-- `mobile/.env` → `http://192.168.0.128:5001/api`
-- `mobile/app.json` → `"apiUrl": "http://192.168.0.128:5001/api"`
-- `mobile/services/api.ts` → `'http://192.168.0.128:5001/api'`
+- `mobile/.env` → `http://192.168.0.191:5001/api`
+- `mobile/app.json` → `"apiUrl": "http://192.168.0.191:5001/api"`
+- `mobile/services/api.ts` → `'http://192.168.0.191:5001/api'`
 - Вся документация
 
 ### 2. Backend слушает на всех интерфейсах
@@ -31,7 +31,7 @@ if (origin && origin.startsWith('http://192.168.')) {
 Также в списке allowed origins:
 - `http://localhost:5173` (web)
 - `http://localhost:8081` (mobile dev server)
-- `http://192.168.0.128:8081` (mobile на устройстве)
+- `http://192.168.0.191:8081` (mobile на устройстве)
 
 ## 🚀 Как проверить
 
@@ -44,7 +44,7 @@ npm run dev
 Вы увидите:
 ```
 🚀 Сервер запущен на порту 5001 и доступен на всех сетевых интерфейсах
-📱 Мобильное приложение: http://192.168.0.128:5001/api
+📱 Мобильное приложение: http://192.168.0.191:5001/api
 💻 Веб-приложение: http://localhost:5001/api
 ```
 
@@ -54,7 +54,7 @@ npm run dev
 curl http://localhost:5001/api/health
 
 # По IP (если это не работает - проблема в firewall)
-curl http://192.168.0.128:5001/api/health
+curl http://192.168.0.191:5001/api/health
 ```
 
 ### Шаг 3: Запустить mobile
@@ -65,7 +65,7 @@ pnpm start
 
 ## ⚠️ Возможные проблемы
 
-### Проблема: `curl http://192.168.0.128:5001/api/health` не работает
+### Проблема: `curl http://192.168.0.191:5001/api/health` не работает
 
 **Причина:** Firewall блокирует порт 5001
 
@@ -90,7 +90,7 @@ System Preferences → Security & Privacy → Firewall → Firewall Options → 
 
 Проверьте preflight запрос:
 ```bash
-curl -X OPTIONS http://192.168.0.128:5001/api/auth/login \
+curl -X OPTIONS http://192.168.0.191:5001/api/auth/login \
   -H "Origin: http://localhost:8081" \
   -H "Access-Control-Request-Method: POST" \
   -v
@@ -111,8 +111,8 @@ Access-Control-Allow-Credentials: true
 ## 🎯 Чеклист перед тестированием
 
 - [ ] Backend .env содержит `PORT=5001`
-- [ ] Mobile .env содержит `EXPO_PUBLIC_API_URL=http://192.168.0.128:5001/api`
-- [ ] Mobile app.json содержит `"apiUrl": "http://192.168.0.128:5001/api"`
+- [ ] Mobile .env содержит `EXPO_PUBLIC_API_URL=http://192.168.0.191:5001/api`
+- [ ] Mobile app.json содержит `"apiUrl": "http://192.168.0.191:5001/api"`
 - [ ] Backend перезапущен
 - [ ] Firewall разрешает порт 5001
 - [ ] Телефон и компьютер в одной Wi-Fi сети

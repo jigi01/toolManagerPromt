@@ -69,7 +69,7 @@ pnpm ios
 
 ## Текущая конфигурация
 
-- **API URL**: `http://192.168.0.128:5001/api`
+- **API URL**: `http://192.168.0.191:5001/api`
 - **Backend Port**: 5001
 - **Auth**: Bearer токены (хранятся в AsyncStorage)
 

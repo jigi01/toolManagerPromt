@@ -44,20 +44,26 @@ export default function ToolDetailScreen() {
   const fetchUsers = async () => {
     try {
       const response = await api.get('/users');
-      setUsers(response.data.users || []);
+      const fetchedUsers = response.data.users || [];
+      setUsers(fetchedUsers);
+      return fetchedUsers;
     } catch (error) {
       console.error('Error fetching users:', error);
       Alert.alert('Ошибка', 'Не удалось загрузить список пользователей');
+      return [];
     }
   };
 
   const fetchWarehouses = async () => {
     try {
       const response = await api.get('/warehouses');
-      setWarehouses(response.data.warehouses || []);
+      const fetchedWarehouses = response.data.warehouses || [];
+      setWarehouses(fetchedWarehouses);
+      return fetchedWarehouses;
     } catch (error) {
       console.error('Error fetching warehouses:', error);
       Alert.alert('Ошибка', 'Не удалось загрузить список складов');
+      return [];
     }
   };
 
@@ -81,16 +87,18 @@ export default function ToolDetailScreen() {
   };
 
   const handleReturn = async () => {
-    if (warehouses.length === 0) {
-      await fetchWarehouses();
+    let availableWarehouses = warehouses;
+    
+    if (availableWarehouses.length === 0) {
+      availableWarehouses = await fetchWarehouses();
     }
 
-    if (warehouses.length === 0) {
+    if (availableWarehouses.length === 0) {
       Alert.alert('Ошибка', 'Нет доступных складов');
       return;
     }
 
-    const defaultWarehouse = warehouses[0];
+    const defaultWarehouse = availableWarehouses[0];
     
     Alert.alert(
       'Вернуть на склад',

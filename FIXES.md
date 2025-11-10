@@ -1,6 +1,6 @@
 # Исправления
 
-## Проблема 1: GET на мои инструменты не работал
+## Проблема 1: Не работал GET на мои инструменты
 
 **Причина:** Эндпоинта `/tools/my` не существовало в бэкенде.
 
@@ -133,9 +133,51 @@ router.get('/my', protect, toolController.getMyTools);
 }
 ```
 
+## Проблема 3: Не открывалась страница инструмента на мобилке
+
+**Причина:** Мобильное приложение использовало неправильные URL-ы для эндпоинтов передачи и возврата инструментов:
+- Использовалось: `/transfer/tool/${id}` и `/transfer/checkin/${id}`
+- Ожидалось: `/tools/${id}/transfer` и `/tools/${id}/checkin`
+
+**Решение:**
+Исправлены все URL-ы в `/mobile/app/tool/[id].tsx`:
+
+### Изменения в мобильном приложении:
+
+**Было:**
+```typescript
+// Взять инструмент
+await api.post(`/transfer/tool/${id}`, { toUserId: user?.id });
+
+// Вернуть инструмент
+await api.post(`/transfer/checkin/${id}`, { warehouseId: defaultWarehouse.id });
+
+// Передать инструмент
+await api.post(`/transfer/tool/${id}`, { toUserId: transferUserId });
+```
+
+**Стало:**
+```typescript
+// Взять инструмент
+await api.post(`/tools/${id}/transfer`, { toUserId: user?.id });
+
+// Вернуть инструмент
+await api.post(`/tools/${id}/checkin`, { warehouseId: defaultWarehouse.id });
+
+// Передать инструмент
+await api.post(`/tools/${id}/transfer`, { toUserId: transferUserId });
+```
+
+### Правильные эндпоинты:
+
+Согласно `/backend/src/routes/tool.routes.js`:
+- ✅ `POST /api/tools/:id/transfer` - передача инструмента
+- ✅ `POST /api/tools/:id/checkin` - возврат на склад
+
 ## Итого
 
-✅ Проблема 1: Исправлено - добавлен эндпоинт `/tools/my`  
-✅ Проблема 2: Исправлено - правильная обработка cookies на web и токенов на native
+✅ **Проблема 1**: Исправлено - добавлен эндпоинт `/tools/my`  
+✅ **Проблема 2**: Исправлено - правильная обработка cookies на web и токенов на native  
+✅ **Проблема 3**: Исправлено - использование правильных URL для операций с инструментами
 
-Оба исправления протестированы и готовы к использованию.
+Все исправления протестированы и готовы к использованию.

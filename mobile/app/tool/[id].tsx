@@ -54,7 +54,7 @@ export default function ToolDetailScreen() {
   const handleTake = async () => {
     setProcessing(true);
     try {
-      await api.post(`/transfer/tool/${id}`, {
+      await api.post(`/tools/${id}/transfer`, {
         toUserId: user?.id,
       });
       Alert.alert('Успех', 'Инструмент взят');
@@ -84,7 +84,7 @@ export default function ToolDetailScreen() {
           onPress: async () => {
             setProcessing(true);
             try {
-              await api.post(`/transfer/checkin/${id}`, {
+              await api.post(`/tools/${id}/checkin`, {
                 warehouseId: defaultWarehouse.id,
               });
               Alert.alert('Успех', 'Инструмент возвращен на склад');
@@ -108,7 +108,7 @@ export default function ToolDetailScreen() {
 
     setProcessing(true);
     try {
-      await api.post(`/transfer/tool/${id}`, {
+      await api.post(`/tools/${id}/transfer`, {
         toUserId: transferUserId,
       });
       Alert.alert('Успех', 'Инструмент передан');

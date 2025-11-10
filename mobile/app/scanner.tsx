@@ -23,15 +23,40 @@ export default function ScannerScreen() {
   }, [permission]);
 
   const handleBarCodeScanned = ({ data }: { data: string }) => {
+    // 1. Проверяем, не сканируем ли мы уже (это правильно)
     if (scanned) return;
     
+    // 2. Блокируем повторное сканирование
     setScanned(true);
+
+    try {
+      // 3. Парсим ID (как в прошлый раз)
+      const segments = data.split('/');
+      const toolId = segments[segments.length - 1];
+
+      if (toolId) {
+        console.log(`Навигация (REPLACE) на /tool/${toolId}`);
+
+        // 4. ГЛАВНОЕ ИЗМЕНЕНИЕ:
+        // 'replace' закроет этот экран (и камеру) и откроет новый.
+        router.replace(`/tool/${toolId}`);
+
+        // 5. НЕ НУЖЕН setTimeout!
+        // Мы уходим с этого экрана, компонент будет размонтирован.
+
+      } else {
+        throw new Error("ID не найден в URL");
+      }
+    } catch (error) {
+      console.error("Ошибка парсинга QR-кода:", error, data);
+      Alert.alert("Ошибка сканирования", "Не удалось извлечь ID из QR-кода. Попробуйте еще раз.");
+      
+      // 6. Сбрасываем сканер ТОЛЬКО если произошла ошибка,
+      //    чтобы пользователь мог попробовать снова.
+      setScanned(false); 
+    }
     
-    router.push(`/tool/${data}`);
-    
-    setTimeout(() => {
-      setScanned(false);
-    }, 2000);
+    // 7. УДАЛИ СТАРЫЙ setTimeout
   };
 
   if (!permission) {

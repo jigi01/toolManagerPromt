@@ -239,7 +239,6 @@ export default function ToolDetailScreen() {
             )}
           </TouchableOpacity>
         )}
-
         {isMyTool && (
           <>
             <TouchableOpacity
@@ -272,7 +271,6 @@ export default function ToolDetailScreen() {
             </TouchableOpacity>
           </>
         )}
-
         {!isAvailable && !isMyTool && (
           <View style={styles.notAvailableContainer}>
             <Ionicons name="lock-closed" size={24} color="#718096" />

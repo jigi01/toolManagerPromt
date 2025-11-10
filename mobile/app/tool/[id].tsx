@@ -31,19 +31,33 @@ export default function ToolDetailScreen() {
 
   const fetchData = async () => {
     try {
-      const [toolRes, usersRes, warehousesRes] = await Promise.all([
-        api.get(`/tools/${id}`),
-        api.get('/users'),
-        api.get('/warehouses'),
-      ]);
+      const toolRes = await api.get(`/tools/${id}`);
       setTool(toolRes.data.tool);
-      setUsers(usersRes.data.users || []);
-      setWarehouses(warehousesRes.data.warehouses || []);
     } catch (error) {
       console.error('Error fetching tool:', error);
       Alert.alert('Ошибка', 'Не удалось загрузить данные инструмента');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const response = await api.get('/users');
+      setUsers(response.data.users || []);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      Alert.alert('Ошибка', 'Не удалось загрузить список пользователей');
+    }
+  };
+
+  const fetchWarehouses = async () => {
+    try {
+      const response = await api.get('/warehouses');
+      setWarehouses(response.data.warehouses || []);
+    } catch (error) {
+      console.error('Error fetching warehouses:', error);
+      Alert.alert('Ошибка', 'Не удалось загрузить список складов');
     }
   };
 
@@ -67,6 +81,10 @@ export default function ToolDetailScreen() {
   };
 
   const handleReturn = async () => {
+    if (warehouses.length === 0) {
+      await fetchWarehouses();
+    }
+
     if (warehouses.length === 0) {
       Alert.alert('Ошибка', 'Нет доступных складов');
       return;
@@ -241,7 +259,12 @@ export default function ToolDetailScreen() {
 
             <TouchableOpacity
               style={[styles.actionButton, styles.actionButtonPrimary]}
-              onPress={() => setShowTransferModal(true)}
+              onPress={async () => {
+                if (users.length === 0) {
+                  await fetchUsers();
+                }
+                setShowTransferModal(true);
+              }}
               disabled={processing}
             >
               <Ionicons name="swap-horizontal" size={24} color="white" />

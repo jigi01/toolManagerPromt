@@ -15,7 +15,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../services/api';
 import useAuthStore from '../../store/authStore';
-import { Tool, User, Warehouse } from '../../types';
+import { Tool, User } from '../../types';
 
 export default function ToolDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -23,7 +23,6 @@ export default function ToolDetailScreen() {
   const { user } = useAuthStore();
   const [tool, setTool] = useState<Tool | null>(null);
   const [users, setUsers] = useState<User[]>([]);
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [loading, setLoading] = useState(true);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [transferUserId, setTransferUserId] = useState('');
@@ -54,19 +53,6 @@ export default function ToolDetailScreen() {
     }
   };
 
-  const fetchWarehouses = async () => {
-    try {
-      const response = await api.get('/warehouses');
-      const fetchedWarehouses = response.data.warehouses || [];
-      setWarehouses(fetchedWarehouses);
-      return fetchedWarehouses;
-    } catch (error) {
-      console.error('Error fetching warehouses:', error);
-      Alert.alert('Ошибка', 'Не удалось загрузить список складов');
-      return [];
-    }
-  };
-
   useEffect(() => {
     fetchData();
   }, [id]);
@@ -87,22 +73,9 @@ export default function ToolDetailScreen() {
   };
 
   const handleReturn = async () => {
-    let availableWarehouses = warehouses;
-    
-    if (availableWarehouses.length === 0) {
-      availableWarehouses = await fetchWarehouses();
-    }
-
-    if (availableWarehouses.length === 0) {
-      Alert.alert('Ошибка', 'Нет доступных складов');
-      return;
-    }
-
-    const defaultWarehouse = availableWarehouses[0];
-    
     Alert.alert(
       'Вернуть на склад',
-      `Вернуть инструмент на склад "${defaultWarehouse.name}"?`,
+      'Вернуть инструмент на склад по умолчанию?',
       [
         { text: 'Отмена', style: 'cancel' },
         {
@@ -110,9 +83,7 @@ export default function ToolDetailScreen() {
           onPress: async () => {
             setProcessing(true);
             try {
-              await api.post(`/tools/${id}/checkin`, {
-                warehouseId: defaultWarehouse.id,
-              });
+              await api.post(`/tools/${id}/checkin`, {});
               Alert.alert('Успех', 'Инструмент возвращен на склад');
               fetchData();
             } catch (error: any) {

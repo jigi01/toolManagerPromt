@@ -115,7 +115,7 @@ export const checkinTool = async (req, res) => {
       id,
       req.user.id,
       req.user.companyId,
-      warehouseId
+      warehouseId || null
     );
 
     res.json({ tool });

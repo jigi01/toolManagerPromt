@@ -14,7 +14,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, Redirect } from 'expo-router';
 import useAuthStore from '../store/authStore';
 import api from '../services/api';
 import { Role } from '../types';
@@ -41,7 +41,7 @@ const ALL_PERMISSIONS = [
 
 export default function RolesScreen() {
   const router = useRouter();
-  const { isBoss } = useAuthStore();
+  const { isBoss, isAuthenticated, loading: authLoading } = useAuthStore();
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -52,14 +52,33 @@ export default function RolesScreen() {
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
+  if (authLoading) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color="#3182CE" />
+      </View>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Redirect href="/(auth)/login" />;
+  }
+
+  if (!isBoss) {
+    Alert.alert('Доступ запрещен', 'Только руководители могут управлять ролями', [
+      { text: 'OK', onPress: () => router.back() }
+    ]);
+    return (
+      <View style={styles.centerContainer}>
+        <Ionicons name="lock-closed" size={64} color="#CBD5E0" />
+        <Text style={styles.errorText}>Доступ запрещен</Text>
+      </View>
+    );
+  }
+
   useEffect(() => {
-    if (!isBoss) {
-      Alert.alert('Access Denied', 'Only bosses can manage roles');
-      router.back();
-      return;
-    }
     fetchRoles();
-  }, [isBoss]);
+  }, []);
 
   const fetchRoles = async () => {
     try {
@@ -352,6 +371,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  errorText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#718096',
+    marginTop: 16,
   },
   header: {
     padding: 16,

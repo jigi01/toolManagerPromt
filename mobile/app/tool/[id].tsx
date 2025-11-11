@@ -11,22 +11,38 @@ import {
   Modal,
   TextInput,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, Redirect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../services/api';
 import useAuthStore from '../../store/authStore';
-import { Tool, User } from '../../types';
+import { Tool, User, Warehouse } from '../../types';
+import { PERMISSIONS } from '../../constants/permissions';
 
 export default function ToolDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { user, isAuthenticated, loading: authLoading, hasPermission } = useAuthStore();
   const [tool, setTool] = useState<Tool | null>(null);
   const [users, setUsers] = useState<User[]>([]);
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [loading, setLoading] = useState(true);
   const [showTransferModal, setShowTransferModal] = useState(false);
+  const [showReturnModal, setShowReturnModal] = useState(false);
   const [transferUserId, setTransferUserId] = useState('');
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState('');
   const [processing, setProcessing] = useState(false);
+
+  if (authLoading) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color="#3182CE" />
+      </View>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Redirect href="/(auth)/login" />;
+  }
 
   const fetchData = async () => {
     try {
@@ -53,6 +69,19 @@ export default function ToolDetailScreen() {
     }
   };
 
+  const fetchWarehouses = async () => {
+    try {
+      const response = await api.get('/warehouses');
+      const fetchedWarehouses = response.data.warehouses || [];
+      setWarehouses(fetchedWarehouses);
+      return fetchedWarehouses;
+    } catch (error) {
+      console.error('Error fetching warehouses:', error);
+      Alert.alert('Ошибка', 'Не удалось загрузить список складов');
+      return [];
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, [id]);
@@ -63,8 +92,16 @@ export default function ToolDetailScreen() {
       await api.post(`/tools/${id}/transfer`, {
         toUserId: user?.id,
       });
-      Alert.alert('Успех', 'Инструмент взят');
-      fetchData();
+      Alert.alert('Успех', 'Инструмент взят', [
+        {
+          text: 'OK',
+          onPress: () => {
+            fetchData();
+            // Небольшая задержка перед возвратом для обновления данных
+            setTimeout(() => router.back(), 100);
+          },
+        },
+      ]);
     } catch (error: any) {
       Alert.alert('Ошибка', error.response?.data?.error || 'Не удалось взять инструмент');
     } finally {
@@ -73,28 +110,74 @@ export default function ToolDetailScreen() {
   };
 
   const handleReturn = async () => {
-    Alert.alert(
-      'Вернуть на склад',
-      'Вернуть инструмент на склад по умолчанию?',
-      [
-        { text: 'Отмена', style: 'cancel' },
+    // Проверяем права на просмотр складов
+    if (!hasPermission(PERMISSIONS.WAREHOUSE_READ)) {
+      Alert.alert(
+        'Нет прав',
+        'У вас нет прав на просмотр списка складов. Инструмент будет возвращен на склад по умолчанию.',
+        [
+          { text: 'Отмена', style: 'cancel' },
+          {
+            text: 'Вернуть',
+            onPress: async () => {
+              setProcessing(true);
+              try {
+                await api.post(`/tools/${id}/checkin`, {});
+                Alert.alert('Успех', 'Инструмент возвращен на склад', [
+                  {
+                    text: 'OK',
+                    onPress: () => {
+                      fetchData();
+                      setTimeout(() => router.back(), 100);
+                    },
+                  },
+                ]);
+              } catch (error: any) {
+                Alert.alert('Ошибка', error.response?.data?.error || 'Не удалось вернуть инструмент');
+              } finally {
+                setProcessing(false);
+              }
+            },
+          },
+        ]
+      );
+      return;
+    }
+
+    // Загружаем список складов если есть права
+    if (warehouses.length === 0) {
+      await fetchWarehouses();
+    }
+    setShowReturnModal(true);
+  };
+
+  const handleReturnConfirm = async () => {
+    if (!selectedWarehouseId) {
+      Alert.alert('Ошибка', 'Выберите склад');
+      return;
+    }
+
+    setProcessing(true);
+    try {
+      await api.post(`/tools/${id}/checkin`, {
+        warehouseId: selectedWarehouseId,
+      });
+      setShowReturnModal(false);
+      setSelectedWarehouseId('');
+      Alert.alert('Успех', 'Инструмент возвращен на склад', [
         {
-          text: 'Вернуть',
-          onPress: async () => {
-            setProcessing(true);
-            try {
-              await api.post(`/tools/${id}/checkin`, {});
-              Alert.alert('Успех', 'Инструмент возвращен на склад');
-              fetchData();
-            } catch (error: any) {
-              Alert.alert('Ошибка', error.response?.data?.error || 'Не удалось вернуть инструмент');
-            } finally {
-              setProcessing(false);
-            }
+          text: 'OK',
+          onPress: () => {
+            fetchData();
+            setTimeout(() => router.back(), 100);
           },
         },
-      ]
-    );
+      ]);
+    } catch (error: any) {
+      Alert.alert('Ошибка', error.response?.data?.error || 'Не удалось вернуть инструмент');
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const handleTransfer = async () => {
@@ -108,10 +191,17 @@ export default function ToolDetailScreen() {
       await api.post(`/tools/${id}/transfer`, {
         toUserId: transferUserId,
       });
-      Alert.alert('Успех', 'Инструмент передан');
       setShowTransferModal(false);
       setTransferUserId('');
-      fetchData();
+      Alert.alert('Успех', 'Инструмент передан', [
+        {
+          text: 'OK',
+          onPress: () => {
+            fetchData();
+            setTimeout(() => router.back(), 100);
+          },
+        },
+      ]);
     } catch (error: any) {
       Alert.alert('Ошибка', error.response?.data?.error || 'Не удалось передать инструмент');
     } finally {
@@ -304,6 +394,54 @@ export default function ToolDetailScreen() {
                   )}
                 </TouchableOpacity>
               ))}
+          </ScrollView>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showReturnModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowReturnModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowReturnModal(false)}>
+              <Text style={styles.modalCancel}>Отмена</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Вернуть инструмент</Text>
+            <TouchableOpacity onPress={handleReturnConfirm} disabled={processing}>
+              <Text style={[styles.modalSave, processing && styles.modalSaveDisabled]}>
+                {processing ? 'Возврат...' : 'Вернуть'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView style={styles.modalContent}>
+            <Text style={styles.modalSubtitle}>Выберите склад</Text>
+            {warehouses.map((warehouse) => (
+              <TouchableOpacity
+                key={warehouse.id}
+                style={[
+                  styles.warehouseOption,
+                  selectedWarehouseId === warehouse.id && styles.warehouseOptionActive,
+                ]}
+                onPress={() => setSelectedWarehouseId(warehouse.id)}
+              >
+                <View style={styles.warehouseIcon}>
+                  <Ionicons name="business" size={24} color="#3182CE" />
+                </View>
+                <View style={styles.warehouseInfo}>
+                  <Text style={styles.warehouseName}>{warehouse.name}</Text>
+                  {warehouse.location && (
+                    <Text style={styles.warehouseLocation}>{warehouse.location}</Text>
+                  )}
+                </View>
+                {selectedWarehouseId === warehouse.id && (
+                  <Ionicons name="checkmark-circle" size={24} color="#3182CE" />
+                )}
+              </TouchableOpacity>
+            ))}
           </ScrollView>
         </View>
       </Modal>
@@ -558,6 +696,45 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   userEmail: {
+    fontSize: 14,
+    color: '#718096',
+  },
+  warehouseOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  warehouseOptionActive: {
+    borderWidth: 2,
+    borderColor: '#3182CE',
+  },
+  warehouseIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#EBF8FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  warehouseInfo: {
+    flex: 1,
+  },
+  warehouseName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2D3748',
+    marginBottom: 4,
+  },
+  warehouseLocation: {
     fontSize: 14,
     color: '#718096',
   },

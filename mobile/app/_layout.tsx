@@ -39,8 +39,9 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="tool/[id]" options={{ headerShown: true, title: 'Tool Details' }} />
-        <Stack.Screen name="roles" options={{ headerShown: true, title: 'Roles' }} />
+        <Stack.Screen name="scanner" options={{ headerShown: true, title: 'Сканировать QR' }} />
+        <Stack.Screen name="tool/[id]" options={{ headerShown: true, title: 'Информация об инструменте' }} />
+        <Stack.Screen name="roles" options={{ headerShown: true, title: 'Роли' }} />
       </Stack>
     </>
   );

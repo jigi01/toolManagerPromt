@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import useAuthStore from '../../store/authStore';
 import api from '../../services/api';
 import { Tool, Category } from '../../types';
@@ -49,6 +49,13 @@ export default function ToolsScreen() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Обновляем данные каждый раз когда возвращаемся на этот экран
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [])
+  );
 
   useEffect(() => {
     let filtered = tools;

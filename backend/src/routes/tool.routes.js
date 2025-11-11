@@ -17,6 +17,7 @@ router.post(
 );
 
 router.get('/', protect, requirePermission('TOOL_READ'), toolController.getTools);
+router.get('/my', protect, toolController.getMyTools);
 router.get('/:id', protect, requirePermission('TOOL_READ'), toolController.getTool);
 router.put('/:id', protect, requirePermission('TOOL_UPDATE'), toolController.updateTool);
 router.delete('/:id', protect, requirePermission('TOOL_DELETE'), toolController.deleteTool);

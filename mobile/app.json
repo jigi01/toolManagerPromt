@@ -45,6 +45,12 @@
           "photosPermission": "The app needs access to your photos to upload tool images.",
           "cameraPermission": "The app needs access to your camera to take photos of tools."
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera for scanning QR codes."
+        }
       ]
     ],
     "experiments": {

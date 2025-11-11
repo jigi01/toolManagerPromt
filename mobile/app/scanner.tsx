@@ -6,15 +6,30 @@ import {
   TouchableOpacity,
   Alert,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useRouter } from 'expo-router';
+import { useRouter, Redirect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import useAuthStore from '../store/authStore';
 
 export default function ScannerScreen() {
   const router = useRouter();
+  const { isAuthenticated, loading: authLoading } = useAuthStore();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
+
+  if (authLoading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#3182CE" />
+      </View>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Redirect href="/(auth)/login" />;
+  }
 
   useEffect(() => {
     if (!permission?.granted && permission?.canAskAgain) {

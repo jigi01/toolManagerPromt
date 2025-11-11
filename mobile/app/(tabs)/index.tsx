@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import useAuthStore from '../../store/authStore';
 import api from '../../services/api';
 import { Tool } from '../../types';
@@ -36,6 +36,13 @@ export default function HomeScreen() {
   useEffect(() => {
     fetchMyTools();
   }, []);
+
+  // Обновляем данные каждый раз когда возвращаемся на этот экран
+  useFocusEffect(
+    useCallback(() => {
+      fetchMyTools();
+    }, [])
+  );
 
   const onRefresh = () => {
     setRefreshing(true);

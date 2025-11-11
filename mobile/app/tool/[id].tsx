@@ -63,8 +63,16 @@ export default function ToolDetailScreen() {
       await api.post(`/tools/${id}/transfer`, {
         toUserId: user?.id,
       });
-      Alert.alert('Успех', 'Инструмент взят');
-      fetchData();
+      Alert.alert('Успех', 'Инструмент взят', [
+        {
+          text: 'OK',
+          onPress: () => {
+            fetchData();
+            // Небольшая задержка перед возвратом для обновления данных
+            setTimeout(() => router.back(), 100);
+          },
+        },
+      ]);
     } catch (error: any) {
       Alert.alert('Ошибка', error.response?.data?.error || 'Не удалось взять инструмент');
     } finally {
@@ -84,8 +92,15 @@ export default function ToolDetailScreen() {
             setProcessing(true);
             try {
               await api.post(`/tools/${id}/checkin`, {});
-              Alert.alert('Успех', 'Инструмент возвращен на склад');
-              fetchData();
+              Alert.alert('Успех', 'Инструмент возвращен на склад', [
+                {
+                  text: 'OK',
+                  onPress: () => {
+                    fetchData();
+                    setTimeout(() => router.back(), 100);
+                  },
+                },
+              ]);
             } catch (error: any) {
               Alert.alert('Ошибка', error.response?.data?.error || 'Не удалось вернуть инструмент');
             } finally {
@@ -108,10 +123,17 @@ export default function ToolDetailScreen() {
       await api.post(`/tools/${id}/transfer`, {
         toUserId: transferUserId,
       });
-      Alert.alert('Успех', 'Инструмент передан');
       setShowTransferModal(false);
       setTransferUserId('');
-      fetchData();
+      Alert.alert('Успех', 'Инструмент передан', [
+        {
+          text: 'OK',
+          onPress: () => {
+            fetchData();
+            setTimeout(() => router.back(), 100);
+          },
+        },
+      ]);
     } catch (error: any) {
       Alert.alert('Ошибка', error.response?.data?.error || 'Не удалось передать инструмент');
     } finally {

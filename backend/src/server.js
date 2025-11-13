@@ -20,8 +20,8 @@ const PORT = process.env.PORT || 5001;
 
 const allowedOrigins = [
   process.env.FRONTEND_URL || 'http://localhost:5173', // Твой WEB-frontend
-  'http://localhost:8081',  // Твой MOBILE-frontend (Expo web)
-  'http://192.168.0.191:8081', // Expo mobile на устройстве
+  process.env.MOBILE_LOCAL_URL,  // Твой MOBILE-frontend (Expo web)
+  process.env.MOBILE_INET_URL, // Expo mobile на устройстве
 ];
 
 app.use(cors({

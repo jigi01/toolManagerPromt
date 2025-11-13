@@ -1,6 +1,5 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
 // Для web используем localhost, для нативных платформ - IP
@@ -8,7 +7,7 @@ const getApiUrl = () => {
   if (Platform.OS === 'web') {
     return 'http://localhost:5001/api';
   }
-  return Constants.expoConfig?.extra?.apiUrl || process.env.EXPO_PUBLIC_API_URL || 'http://192.168.0.191:5001/api';
+  return process.env.EXPO_PUBLIC_API_URL;
 };
 
 const API_URL = getApiUrl();

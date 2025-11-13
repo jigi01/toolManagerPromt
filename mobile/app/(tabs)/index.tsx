@@ -13,6 +13,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import useAuthStore from '../../store/authStore';
 import api from '../../services/api';
 import { Tool } from '../../types';
+import FloatingActionButton from '../../components/FloatingActionButton';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -122,6 +123,7 @@ export default function HomeScreen() {
           ))
         )}
       </View>
+      <FloatingActionButton />
     </ScrollView>
   );
 }

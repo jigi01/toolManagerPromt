@@ -1,28 +1,46 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  TextInput,
+  Switch,
   Alert,
-  Modal,
+  Linking,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { Camera } from 'expo-camera';
+import * as Application from 'expo-application';
 import useAuthStore from '../../store/authStore';
-import api from '../../services/api';
-import { PERMISSIONS } from '../../constants/permissions';
+import useSettingsStore from '../../store/settingsStore';
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { user, isBoss, logout } = useAuthStore();
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [saving, setSaving] = useState(false);
+  const { user, logout } = useAuthStore();
+  const {
+    hapticsEnabled,
+    soundEnabled,
+    theme,
+    setHaptics,
+    setSound,
+    setTheme,
+    loadSettings,
+  } = useSettingsStore();
+
+  const [cameraPermission, setCameraPermission] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
+
+  useEffect(() => {
+    loadSettings();
+    checkCameraPermission();
+  }, []);
+
+  const checkCameraPermission = async () => {
+    const { status } = await Camera.getCameraPermissionsAsync();
+    setCameraPermission(status);
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -42,148 +60,168 @@ export default function SettingsScreen() {
     );
   };
 
-  const handleChangePassword = async () => {
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      Alert.alert('Ошибка', 'Заполните все поля');
-      return;
-    }
+  const openAppSettings = () => {
+    Linking.openSettings();
+  };
 
-    if (newPassword !== confirmPassword) {
-      Alert.alert('Ошибка', 'Новые пароли не совпадают');
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      Alert.alert('Ошибка', 'Пароль должен быть не менее 6 символов');
-      return;
-    }
-
-    setSaving(true);
-    try {
-      await api.put('/auth/change-password', {
-        currentPassword,
-        newPassword,
-      });
-      Alert.alert('Успех', 'Пароль успешно изменен');
-      setShowPasswordModal(false);
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-    } catch (error: any) {
-      Alert.alert('Ошибка', error.response?.data?.error || 'Не удалось изменить пароль');
-    } finally {
-      setSaving(false);
+  const getThemeLabel = (theme: string) => {
+    switch (theme) {
+      case 'light':
+        return 'Светлая';
+      case 'dark':
+        return 'Темная';
+      case 'system':
+        return 'Как в системе';
+      default:
+        return 'Как в системе';
     }
   };
 
+  const handleThemeChange = () => {
+    Alert.alert(
+      'Тема оформления',
+      'Выберите тему',
+      [
+        {
+          text: 'Светлая',
+          onPress: () => setTheme('light'),
+        },
+        {
+          text: 'Темная',
+          onPress: () => setTheme('dark'),
+        },
+        {
+          text: 'Как в системе',
+          onPress: () => setTheme('system'),
+        },
+        {
+          text: 'Отмена',
+          style: 'cancel',
+        },
+      ]
+    );
+  };
+
+  const appVersion = Application.nativeApplicationVersion || '1.0.0';
+  const buildNumber = Application.nativeBuildVersion || '1';
+
   return (
     <ScrollView style={styles.container}>
+      {/* Управление аккаунтом */}
       <View style={styles.section}>
-        <View style={styles.profileCard}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {user?.name?.charAt(0).toUpperCase()}
-            </Text>
-          </View>
+        <Text style={styles.sectionTitle}>УПРАВЛЕНИЕ АККАУНТОМ</Text>
+        
+        <View style={styles.card}>
+          <Text style={styles.userInfoLabel}>Вы вошли как:</Text>
           <Text style={styles.userName}>{user?.name}</Text>
           <Text style={styles.userEmail}>{user?.email}</Text>
-          <View style={styles.roleBadge}>
-            <Text style={styles.roleBadgeText}>{user?.role?.name}</Text>
-          </View>
         </View>
-      </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Аккаунт</Text>
-        
         <TouchableOpacity
-          style={styles.settingItem}
-          onPress={() => setShowPasswordModal(true)}
+          style={styles.logoutButton}
+          onPress={handleLogout}
+          activeOpacity={0.7}
         >
-          <View style={styles.settingItemLeft}>
-            <Ionicons name="key" size={20} color="#718096" />
-            <Text style={styles.settingItemText}>Изменить пароль</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color="#CBD5E0" />
+          <Ionicons name="log-out-outline" size={24} color="white" />
+          <Text style={styles.logoutButtonText}>ВЫЙТИ</Text>
         </TouchableOpacity>
       </View>
 
+      {/* Поведение приложения */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>О приложении</Text>
+        <Text style={styles.sectionTitle}>ПОВЕДЕНИЕ ПРИЛОЖЕНИЯ</Text>
         
-        <View style={styles.infoItem}>
-          <Text style={styles.infoLabel}>Компания</Text>
-          <Text style={styles.infoValue}>{user?.company?.name}</Text>
-        </View>
+        <View style={styles.card}>
+          <View style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <Ionicons name="phone-portrait-outline" size={20} color="#718096" />
+              <View style={styles.settingTextContainer}>
+                <Text style={styles.settingText}>Виброотклик при сканировании</Text>
+                <Text style={styles.settingDescription}>Тактильная отдача при считывании QR</Text>
+              </View>
+            </View>
+            <Switch
+              value={hapticsEnabled}
+              onValueChange={setHaptics}
+              trackColor={{ false: '#CBD5E0', true: '#63B3ED' }}
+              thumbColor={hapticsEnabled ? '#3182CE' : '#E2E8F0'}
+            />
+          </View>
 
-        <View style={styles.infoItem}>
-          <Text style={styles.infoLabel}>Версия</Text>
-          <Text style={styles.infoValue}>1.0.0</Text>
+          <View style={styles.divider} />
+
+          <View style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <Ionicons name="volume-medium-outline" size={20} color="#718096" />
+              <View style={styles.settingTextContainer}>
+                <Text style={styles.settingText}>Звук при сканировании</Text>
+                <Text style={styles.settingDescription}>Звуковой сигнал при считывании QR</Text>
+              </View>
+            </View>
+            <Switch
+              value={soundEnabled}
+              onValueChange={setSound}
+              trackColor={{ false: '#CBD5E0', true: '#63B3ED' }}
+              thumbColor={soundEnabled ? '#3182CE' : '#E2E8F0'}
+            />
+          </View>
+
+          <View style={styles.divider} />
+
+          <TouchableOpacity
+            style={styles.settingRow}
+            onPress={handleThemeChange}
+            activeOpacity={0.7}
+          >
+            <View style={styles.settingLeft}>
+              <Ionicons name="color-palette-outline" size={20} color="#718096" />
+              <View style={styles.settingTextContainer}>
+                <Text style={styles.settingText}>Тема оформления</Text>
+                <Text style={styles.settingDescription}>{getThemeLabel(theme)}</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#CBD5E0" />
+          </TouchableOpacity>
         </View>
       </View>
 
+      {/* Разрешения и Информация */}
       <View style={styles.section}>
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Ionicons name="log-out" size={20} color="#E53E3E" />
-          <Text style={styles.logoutButtonText}>Выйти</Text>
-        </TouchableOpacity>
-      </View>
-
-      <Modal
-        visible={showPasswordModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowPasswordModal(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setShowPasswordModal(false)}>
-              <Text style={styles.modalCancel}>Отмена</Text>
-            </TouchableOpacity>
-            <Text style={styles.modalTitle}>Изменить пароль</Text>
-            <TouchableOpacity onPress={handleChangePassword} disabled={saving}>
-              <Text style={[styles.modalSave, saving && styles.modalSaveDisabled]}>
-                {saving ? 'Сохранение...' : 'Сохранить'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.modalContent}>
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Текущий пароль</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Введите текущий пароль"
-                value={currentPassword}
-                onChangeText={setCurrentPassword}
-                secureTextEntry
-              />
+        <Text style={styles.sectionTitle}>РАЗРЕШЕНИЯ</Text>
+        
+        <View style={styles.card}>
+          <View style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <Ionicons name="camera-outline" size={20} color="#718096" />
+              <View style={styles.settingTextContainer}>
+                <Text style={styles.settingText}>Доступ к камере</Text>
+                <Text style={[
+                  styles.settingDescription,
+                  cameraPermission === 'granted' ? styles.permissionGranted : styles.permissionDenied
+                ]}>
+                  {cameraPermission === 'granted' ? 'Разрешен' : 'Запрещен'}
+                </Text>
+              </View>
             </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Новый пароль</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Введите новый пароль"
-                value={newPassword}
-                onChangeText={setNewPassword}
-                secureTextEntry
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Подтвердите пароль</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Повторите новый пароль"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry
-              />
-            </View>
+            {cameraPermission !== 'granted' && (
+              <TouchableOpacity
+                style={styles.openSettingsButton}
+                onPress={openAppSettings}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.openSettingsButtonText}>Открыть настройки</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
-      </Modal>
+      </View>
+
+      {/* О приложении */}
+      <View style={styles.aboutSection}>
+        <Text style={styles.aboutText}>
+          ToolManager, версия {appVersion} (сборка {buildNumber})
+        </Text>
+      </View>
     </ScrollView>
   );
 }
@@ -197,170 +235,118 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   sectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '700',
     color: '#718096',
-    textTransform: 'uppercase',
+    letterSpacing: 0.5,
     marginBottom: 12,
     marginLeft: 4,
   },
-  profileCard: {
+  card: {
     backgroundColor: 'white',
     borderRadius: 12,
-    padding: 24,
-    alignItems: 'center',
+    padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#3182CE',
-    justifyContent: 'center',
-    alignItems: 'center',
     marginBottom: 16,
   },
-  avatarText: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: 'white',
+  userInfoLabel: {
+    fontSize: 14,
+    color: '#718096',
+    marginBottom: 8,
   },
   userName: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#2D3748',
     marginBottom: 4,
   },
   userEmail: {
     fontSize: 16,
-    color: '#718096',
-    marginBottom: 12,
-  },
-  roleBadge: {
-    backgroundColor: '#EBF8FF',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  roleBadgeText: {
-    fontSize: 14,
-    color: '#3182CE',
-    fontWeight: '600',
-  },
-  settingItem: {
-    backgroundColor: 'white',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  settingItemLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  settingItemText: {
-    fontSize: 16,
-    color: '#2D3748',
-  },
-  infoItem: {
-    backgroundColor: 'white',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  infoLabel: {
-    fontSize: 12,
-    color: '#718096',
-    marginBottom: 4,
-  },
-  infoValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2D3748',
+    color: '#4A5568',
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'white',
-    padding: 16,
+    backgroundColor: '#E53E3E',
+    paddingVertical: 18,
+    paddingHorizontal: 24,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E53E3E',
-    gap: 8,
+    gap: 12,
+    shadowColor: '#E53E3E',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
   },
   logoutButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#E53E3E',
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: 'white',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
-  },
-  modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: 'white',
+    letterSpacing: 0.5,
+  },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+  },
+  settingLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 12,
+  },
+  settingTextContainer: {
+    flex: 1,
+  },
+  settingText: {
+    fontSize: 16,
     color: '#2D3748',
+    fontWeight: '500',
+    marginBottom: 2,
   },
-  modalCancel: {
-    fontSize: 16,
-    color: '#718096',
+  settingDescription: {
+    fontSize: 13,
+    color: '#A0AEC0',
   },
-  modalSave: {
-    fontSize: 16,
-    color: '#3182CE',
+  divider: {
+    height: 1,
+    backgroundColor: '#E2E8F0',
+    marginVertical: 4,
+  },
+  permissionGranted: {
+    color: '#38A169',
     fontWeight: '600',
   },
-  modalSaveDisabled: {
-    color: '#CBD5E0',
+  permissionDenied: {
+    color: '#E53E3E',
+    fontWeight: '600',
   },
-  modalContent: {
+  openSettingsButton: {
+    backgroundColor: '#3182CE',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  openSettingsButtonText: {
+    fontSize: 12,
+    color: 'white',
+    fontWeight: '600',
+  },
+  aboutSection: {
     padding: 16,
+    paddingTop: 8,
+    paddingBottom: 32,
+    alignItems: 'center',
   },
-  inputGroup: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#2D3748',
-    marginBottom: 8,
-  },
-  input: {
-    height: 48,
-    backgroundColor: 'white',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    paddingHorizontal: 16,
-    fontSize: 16,
+  aboutText: {
+    fontSize: 12,
+    color: '#A0AEC0',
+    textAlign: 'center',
   },
 });

@@ -16,6 +16,7 @@ import useAuthStore from '../../store/authStore';
 import api from '../../services/api';
 import { Tool, Category } from '../../types';
 import { PERMISSIONS } from '../../constants/permissions';
+import FloatingActionButton from '../../components/FloatingActionButton';
 
 export default function ToolsScreen() {
   const router = useRouter();
@@ -208,6 +209,7 @@ export default function ToolsScreen() {
           </View>
         }
       />
+      <FloatingActionButton />
     </View>
   );
 }

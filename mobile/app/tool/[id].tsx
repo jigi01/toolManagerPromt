@@ -254,33 +254,42 @@ export default function ToolDetailScreen() {
             </View>
           )}
 
-          <View style={styles.statusCard}>
-            <View style={styles.statusHeader}>
-              <Ionicons 
-                name={isAvailable ? 'checkmark-circle' : 'person'} 
-                size={24} 
-                color={isAvailable ? '#38A169' : '#3182CE'} 
-              />
-              <Text style={styles.statusTitle}>Статус</Text>
-            </View>
-            {isAvailable ? (
-              <View style={styles.statusContent}>
-                <Text style={styles.statusLabel}>На складе</Text>
-                {tool.warehouse && (
-                  <Text style={styles.statusValue}>{tool.warehouse.name}</Text>
-                )}
+          {/* Цветной блок статуса */}
+          {isAvailable ? (
+            <View style={[styles.statusBanner, styles.statusAvailable]}>
+              <View style={styles.statusBannerHeader}>
+                <Ionicons name="checkmark-circle" size={32} color="white" />
+                <Text style={styles.statusBannerTitle}>СВОБОДЕН</Text>
               </View>
-            ) : (
-              <View style={styles.statusContent}>
-                <Text style={styles.statusLabel}>
-                  {isMyTool ? 'У вас' : 'Занят'}
+              {tool.warehouse && (
+                <Text style={styles.statusBannerSubtitle}>
+                  На складе "{tool.warehouse.name}"
                 </Text>
-                {tool.currentUser && (
-                  <Text style={styles.statusValue}>{tool.currentUser.name}</Text>
-                )}
+              )}
+            </View>
+          ) : isMyTool ? (
+            <View style={[styles.statusBanner, styles.statusMine]}>
+              <View style={styles.statusBannerHeader}>
+                <Ionicons name="hand-right" size={32} color="white" />
+                <Text style={styles.statusBannerTitle}>У ВАС</Text>
               </View>
-            )}
-          </View>
+              <Text style={styles.statusBannerSubtitle}>
+                Вы взяли этот инструмент
+              </Text>
+            </View>
+          ) : (
+            <View style={[styles.statusBanner, styles.statusBusy]}>
+              <View style={styles.statusBannerHeader}>
+                <Ionicons name="person" size={32} color="white" />
+                <Text style={styles.statusBannerTitle}>ЗАНЯТ</Text>
+              </View>
+              {tool.currentUser && (
+                <Text style={styles.statusBannerSubtitle}>
+                  У: {tool.currentUser.name}
+                </Text>
+              )}
+            </View>
+          )}
 
           {tool.description && (
             <View style={styles.descriptionCard}>
@@ -511,40 +520,41 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#3182CE',
   },
-  statusCard: {
-    backgroundColor: 'white',
+  statusBanner: {
     borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    padding: 24,
+    marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
   },
-  statusHeader: {
+  statusAvailable: {
+    backgroundColor: '#38A169',
+  },
+  statusMine: {
+    backgroundColor: '#ED8936',
+  },
+  statusBusy: {
+    backgroundColor: '#3182CE',
+  },
+  statusBannerHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
-    gap: 8,
+    gap: 16,
+    marginBottom: 8,
   },
-  statusTitle: {
-    fontSize: 18,
+  statusBannerTitle: {
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#2D3748',
+    color: 'white',
+    letterSpacing: 1,
   },
-  statusContent: {
-    marginLeft: 32,
-  },
-  statusLabel: {
-    fontSize: 14,
-    color: '#718096',
-    marginBottom: 4,
-  },
-  statusValue: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#2D3748',
+  statusBannerSubtitle: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginLeft: 48,
   },
   descriptionCard: {
     backgroundColor: 'white',

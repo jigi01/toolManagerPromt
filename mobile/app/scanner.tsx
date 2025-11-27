@@ -11,11 +11,14 @@ import {
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter, Redirect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import useAuthStore from '../store/authStore';
+import useSettingsStore from '../store/settingsStore';
 
 export default function ScannerScreen() {
   const router = useRouter();
   const { isAuthenticated, loading: authLoading } = useAuthStore();
+  const { hapticsEnabled } = useSettingsStore();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
 
@@ -37,41 +40,31 @@ export default function ScannerScreen() {
     }
   }, [permission]);
 
-  const handleBarCodeScanned = ({ data }: { data: string }) => {
-    // 1. Проверяем, не сканируем ли мы уже (это правильно)
+  const handleBarCodeScanned = async ({ data }: { data: string }) => {
     if (scanned) return;
     
-    // 2. Блокируем повторное сканирование
     setScanned(true);
 
+    // Тактильная отдача (если включена в настройках)
+    if (hapticsEnabled) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+
     try {
-      // 3. Парсим ID (как в прошлый раз)
       const segments = data.split('/');
       const toolId = segments[segments.length - 1];
 
       if (toolId) {
         console.log(`Навигация (REPLACE) на /tool/${toolId}`);
-
-        // 4. ГЛАВНОЕ ИЗМЕНЕНИЕ:
-        // 'replace' закроет этот экран (и камеру) и откроет новый.
         router.replace(`/tool/${toolId}`);
-
-        // 5. НЕ НУЖЕН setTimeout!
-        // Мы уходим с этого экрана, компонент будет размонтирован.
-
       } else {
         throw new Error("ID не найден в URL");
       }
     } catch (error) {
       console.error("Ошибка парсинга QR-кода:", error, data);
       Alert.alert("Ошибка сканирования", "Не удалось извлечь ID из QR-кода. Попробуйте еще раз.");
-      
-      // 6. Сбрасываем сканер ТОЛЬКО если произошла ошибка,
-      //    чтобы пользователь мог попробовать снова.
       setScanned(false); 
     }
-    
-    // 7. УДАЛИ СТАРЫЙ setTimeout
   };
 
   if (!permission) {

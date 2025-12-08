@@ -5,7 +5,8 @@
       "dev": "cd backend && node --watch src/server.js",
       "start": "cd backend && node src/server.js",
       "build": "cd backend && npm install && npx prisma generate",
-      "migrate": "npx prisma migrate deploy"
+      "migrate": "npx prisma migrate deploy",
+      "fbuild": "cd frontend && npm run build"
     },
     "engines": {
       "node": ">=18.0.0"

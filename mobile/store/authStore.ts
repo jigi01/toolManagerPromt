@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
+import { Platform, Alert } from 'react-native'; // Добавил Alert
 import api from '../services/api';
 import { User } from '../types';
 
@@ -85,37 +85,84 @@ const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   login: async (email: string, password: string) => {
-    const response = await api.post('/auth/login', { email, password });
-    const { user, token } = response.data;
-    
-    if (token && Platform.OS !== 'web') {
-      await AsyncStorage.setItem('token', token);
+    try {
+      const response = await api.post('/auth/login', { email, password });
+      const { user, token } = response.data;
+      
+      if (token && Platform.OS !== 'web') {
+        await AsyncStorage.setItem('token', token);
+      }
+      
+      set({
+        user,
+        isAuthenticated: true,
+        isBoss: user.role?.isBoss || false,
+        permissions: user.role?.permissions || [],
+        loading: false,
+      });
+    } catch (error: any) {
+      // --- БЛОК ОТЛАДКИ (LOGIN) ---
+      let errorText = "Неизвестная ошибка";
+      const url = api.defaults.baseURL; // Посмотрим, куда летит запрос
+
+      if (error.response) {
+        // Сервер ответил ошибкой (400, 401, 500 и т.д.)
+        errorText = `Статус: ${error.response.status}\nОтвет: ${JSON.stringify(error.response.data, null, 2)}`;
+      } else if (error.request) {
+        // Запрос ушел, но ответа нет
+        errorText = "Нет ответа от сервера (Network Error). Проверьте интернет или URL API.";
+      } else {
+        errorText = error.message;
+      }
+      
+      // Показываем Alert только на мобилках
+      if (Platform.OS !== 'web') {
+        Alert.alert("DEBUG: Ошибка входа", `URL: ${url}\n\n${errorText}`);
+      }
+      console.error("Login Error:", errorText);
+      
+      // Пробрасываем ошибку дальше, чтобы UI мог среагировать
+      throw error;
     }
-    
-    set({
-      user,
-      isAuthenticated: true,
-      isBoss: user.role?.isBoss || false,
-      permissions: user.role?.permissions || [],
-      loading: false,
-    });
   },
 
   register: async (data: { name: string; email: string; password: string; companyName: string }) => {
-    const response = await api.post('/auth/register', data);
-    const { user, token } = response.data;
-    
-    if (token && Platform.OS !== 'web') {
-      await AsyncStorage.setItem('token', token);
+    try {
+      const response = await api.post('/auth/register', data);
+      const { user, token } = response.data;
+      
+      if (token && Platform.OS !== 'web') {
+        await AsyncStorage.setItem('token', token);
+      }
+      
+      set({
+        user,
+        isAuthenticated: true,
+        isBoss: user.role?.isBoss || false,
+        permissions: user.role?.permissions || [],
+        loading: false,
+      });
+    } catch (error: any) {
+      // --- БЛОК ОТЛАДКИ (REGISTER) ---
+      let errorText = "Неизвестная ошибка";
+      const url = api.defaults.baseURL;
+
+      if (error.response) {
+        // Сервер ответил ошибкой (скорее всего валидация данных)
+        errorText = `Статус: ${error.response.status}\nОтвет: ${JSON.stringify(error.response.data, null, 2)}`;
+      } else if (error.request) {
+        errorText = "Нет ответа от сервера (Network Error).";
+      } else {
+        errorText = error.message;
+      }
+      
+      if (Platform.OS !== 'web') {
+        Alert.alert("DEBUG: Ошибка регистрации", `URL: ${url}\n\n${errorText}`);
+      }
+      console.error("Register Error:", errorText);
+
+      throw error;
     }
-    
-    set({
-      user,
-      isAuthenticated: true,
-      isBoss: user.role?.isBoss || false,
-      permissions: user.role?.permissions || [],
-      loading: false,
-    });
   },
 
   logout: async () => {

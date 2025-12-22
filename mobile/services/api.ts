@@ -4,9 +4,6 @@ import { Platform } from 'react-native';
 
 // Для web используем localhost, для нативных платформ - IP
 const getApiUrl = () => {
-  if (Platform.OS === 'web') {
-    return 'http://localhost:5001/api';
-  }
   return process.env.EXPO_PUBLIC_API_URL;
 };
 

@@ -1,0 +1,39 @@
+{
+  "cli": {
+    "version": ">= 10.0.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "android": {
+        "buildType": "apk"
+      },
+      "channel": "preview",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://jigi01-toolmanagerpromt-1eea.twc1.net/api"
+      }
+    },
+    "production": {
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://jigi01-toolmanagerpromt-1eea.twc1.net/api"
+      }
+    },
+    "simulator": {
+      "ios": {
+        "simulator": true
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://jigi01-toolmanagerpromt-1eea.twc1.net/api"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

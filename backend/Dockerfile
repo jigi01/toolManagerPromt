@@ -2,6 +2,7 @@
 
 # Используем легкий образ Node.js
 FROM node:20-alpine
+RUN apk add --no-cache openssl
 
 # Рабочая папка внутри контейнера
 WORKDIR /app
@@ -10,7 +11,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Устанавливаем зависимости (npm ci быстрее и надежнее для CI/CD)
-RUN npm ci
+RUN npm i
 
 # Копируем схему призмы (важно для генерации клиента)
 COPY prisma ./prisma/

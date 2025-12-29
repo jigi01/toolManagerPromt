@@ -8,12 +8,16 @@
       "distribution": "internal"
     },
     "preview": {
+      "distribution": "internal", 
       "android": {
         "buildType": "apk"
       },
+      "ios": {
+        "simulator": false
+      },
       "channel": "preview",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://jigi01-toolmanagerpromt-1eea.twc1.net/api"
+        "EXPO_PUBLIC_API_URL": "https://toolmanager.ru/api"
       }
     },
     "production": {
@@ -21,7 +25,7 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://jigi01-toolmanagerpromt-1eea.twc1.net/api"
+        "EXPO_PUBLIC_API_URL": "https://toolmanager.ru/api"
       }
     },
     "simulator": {
@@ -29,7 +33,7 @@
         "simulator": true
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://jigi01-toolmanagerpromt-1eea.twc1.net/api"
+        "EXPO_PUBLIC_API_URL": "https://toolmanager.ru/api"
       }
     }
   },

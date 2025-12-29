@@ -18,33 +18,46 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+// --- Настройка CORS ---
+const rawFrontendUrls = process.env.FRONTEND_URL || '';
+const frontendOrigins = rawFrontendUrls.split(',').map(url => url.trim());
+
 const allowedOrigins = [
-  process.env.FRONTEND_URL || 'http://localhost:5173', // Твой WEB-frontend
-  process.env.MOBILE_LOCAL_URL,  // Твой MOBILE-frontend (Expo web)
-  process.env.MOBILE_INET_URL, // Expo mobile на устройстве
-];
+  ...frontendOrigins,
+  process.env.MOBILE_LOCAL_URL,
+  process.env.MOBILE_INET_URL,
+  'http://localhost:5173' 
+].filter(Boolean);
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Позволить запросы без 'origin' (например, мобильные приложения, Postman) или если origin в списке
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      // Разрешить запросы с локальной сети для мобильных устройств
-      if (origin && origin.startsWith('http://192.168.')) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
+    // 1. Разрешаем запросы без origin (серверные, мобильные приложения, Postman)
+    if (!origin) {
+      return callback(null, true);
     }
+
+    // 2. Проверяем точное совпадение со списком
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // 3. Разрешаем локальную сеть (для тестов с телефона в одной Wi-Fi сети)
+    if (origin.startsWith('http://192.168.')) {
+      return callback(null, true);
+    }
+
+    // Иначе блокируем
+    callback(new Error('Not allowed by CORS'));
   },
   credentials: true
 }));
 
+// --- Middleware ---
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(cookieParser());
 
+// --- Маршруты ---
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/tools', toolRoutes);
@@ -55,17 +68,17 @@ app.use('/api/warehouses', warehouseRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/stats', statsRoutes);
 
+// Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'ToolManager API is running' });
 });
 
+// Обработка ошибок
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Что-то пошло не так!' });
+  console.error('🔥 Server Error:', err.stack);
+  res.status(500).json({ error: 'Internal Server Error' });
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Сервер запущен на порту ${PORT} и доступен на всех сетевых интерфейсах`);
-  console.log(`📱 Мобильное приложение: http://192.168.0.191:${PORT}/api`);
-  console.log(`💻 Веб-приложение: http://localhost:${PORT}/api`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });

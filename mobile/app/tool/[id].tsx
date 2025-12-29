@@ -13,10 +13,12 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Redirect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import Toast from 'react-native-toast-message';
 import api from '../../services/api';
 import useAuthStore from '../../store/authStore';
 import { Tool, User, Warehouse } from '../../types';
 import { PERMISSIONS } from '../../constants/permissions';
+import { useThemeColor } from '../../hooks/useThemeColor';
 
 export default function ToolDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -32,10 +34,20 @@ export default function ToolDetailScreen() {
   const [selectedWarehouseId, setSelectedWarehouseId] = useState('');
   const [processing, setProcessing] = useState(false);
 
+  // Theme colors
+  const backgroundColor = useThemeColor({}, 'background');
+  const cardColor = useThemeColor({}, 'card');
+  const textColor = useThemeColor({}, 'text');
+  const textSecondaryColor = useThemeColor({}, 'textSecondary');
+  const primaryColor = useThemeColor({}, 'primary');
+  const iconColor = useThemeColor({}, 'icon');
+  const borderColor = useThemeColor({}, 'border');
+  const inputBackground = useThemeColor({}, 'inputBackground');
+
   if (authLoading) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#3182CE" />
+      <View style={[styles.centerContainer, { backgroundColor }]}>
+        <ActivityIndicator size="large" color={primaryColor} />
       </View>
     );
   }
@@ -92,16 +104,14 @@ export default function ToolDetailScreen() {
       await api.post(`/tools/${id}/transfer`, {
         toUserId: user?.id,
       });
-      Alert.alert('Успех', 'Инструмент взят', [
-        {
-          text: 'OK',
-          onPress: () => {
-            fetchData();
-            // Небольшая задержка перед возвратом для обновления данных
-            setTimeout(() => router.back(), 100);
-          },
-        },
-      ]);
+      Toast.show({
+        type: 'success',
+        text1: 'Успех',
+        text2: 'Инструмент взят',
+      });
+      fetchData();
+      // Небольшая задержка перед возвратом для обновления данных
+      setTimeout(() => router.back(), 100);
     } catch (error: any) {
       Alert.alert('Ошибка', error.response?.data?.error || 'Не удалось взять инструмент');
     } finally {
@@ -123,15 +133,13 @@ export default function ToolDetailScreen() {
               setProcessing(true);
               try {
                 await api.post(`/tools/${id}/checkin`, {});
-                Alert.alert('Успех', 'Инструмент возвращен на склад', [
-                  {
-                    text: 'OK',
-                    onPress: () => {
-                      fetchData();
-                      setTimeout(() => router.back(), 100);
-                    },
-                  },
-                ]);
+                Toast.show({
+                  type: 'success',
+                  text1: 'Успех',
+                  text2: 'Инструмент возвращен на склад',
+                });
+                fetchData();
+                setTimeout(() => router.back(), 100);
               } catch (error: any) {
                 Alert.alert('Ошибка', error.response?.data?.error || 'Не удалось вернуть инструмент');
               } finally {
@@ -164,15 +172,13 @@ export default function ToolDetailScreen() {
       });
       setShowReturnModal(false);
       setSelectedWarehouseId('');
-      Alert.alert('Успех', 'Инструмент возвращен на склад', [
-        {
-          text: 'OK',
-          onPress: () => {
-            fetchData();
-            setTimeout(() => router.back(), 100);
-          },
-        },
-      ]);
+      Toast.show({
+        type: 'success',
+        text1: 'Успех',
+        text2: 'Инструмент возвращен на склад',
+      });
+      fetchData();
+      setTimeout(() => router.back(), 100);
     } catch (error: any) {
       Alert.alert('Ошибка', error.response?.data?.error || 'Не удалось вернуть инструмент');
     } finally {
@@ -193,15 +199,13 @@ export default function ToolDetailScreen() {
       });
       setShowTransferModal(false);
       setTransferUserId('');
-      Alert.alert('Успех', 'Инструмент передан', [
-        {
-          text: 'OK',
-          onPress: () => {
-            fetchData();
-            setTimeout(() => router.back(), 100);
-          },
-        },
-      ]);
+      Toast.show({
+        type: 'success',
+        text1: 'Успех',
+        text2: 'Инструмент передан',
+      });
+      fetchData();
+      setTimeout(() => router.back(), 100);
     } catch (error: any) {
       Alert.alert('Ошибка', error.response?.data?.error || 'Не удалось передать инструмент');
     } finally {
@@ -211,16 +215,16 @@ export default function ToolDetailScreen() {
 
   if (loading) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#3182CE" />
+      <View style={[styles.centerContainer, { backgroundColor }]}>
+        <ActivityIndicator size="large" color={primaryColor} />
       </View>
     );
   }
 
   if (!tool) {
     return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>Инструмент не найден</Text>
+      <View style={[styles.centerContainer, { backgroundColor }]}>
+        <Text style={[styles.errorText, { color: textSecondaryColor }]}>Инструмент не найден</Text>
       </View>
     );
   }
@@ -229,28 +233,28 @@ export default function ToolDetailScreen() {
   const isAvailable = !tool.currentUser;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor }]}>
       <ScrollView style={styles.scrollView}>
-        <View style={styles.imageContainer}>
+        <View style={[styles.imageContainer, { backgroundColor: cardColor }]}>
           {tool.imageUrl ? (
             <Image source={{ uri: tool.imageUrl }} style={styles.image} />
           ) : (
             <View style={styles.placeholderImage}>
-              <Ionicons name="construct" size={80} color="#CBD5E0" />
+              <Ionicons name="construct" size={80} color={iconColor} />
             </View>
           )}
         </View>
 
         <View style={styles.content}>
-          <Text style={styles.name}>{tool.name}</Text>
-          
+          <Text style={[styles.name, { color: textColor }]}>{tool.name}</Text>
+
           {tool.serialNumber && (
-            <Text style={styles.serial}>SN: {tool.serialNumber}</Text>
+            <Text style={[styles.serial, { color: textSecondaryColor }]}>SN: {tool.serialNumber}</Text>
           )}
 
           {tool.category && (
-            <View style={styles.categoryBadge}>
-              <Text style={styles.categoryText}>{tool.category.name}</Text>
+            <View style={[styles.categoryBadge, { backgroundColor: backgroundColor }]}>
+              <Text style={[styles.categoryText, { color: primaryColor }]}>{tool.category.name}</Text>
             </View>
           )}
 
@@ -278,7 +282,7 @@ export default function ToolDetailScreen() {
               </Text>
             </View>
           ) : (
-            <View style={[styles.statusBanner, styles.statusBusy]}>
+            <View style={[styles.statusBanner, styles.statusBusy, { backgroundColor: primaryColor }]}>
               <View style={styles.statusBannerHeader}>
                 <Ionicons name="person" size={32} color="white" />
                 <Text style={styles.statusBannerTitle}>ЗАНЯТ</Text>
@@ -292,18 +296,18 @@ export default function ToolDetailScreen() {
           )}
 
           {tool.description && (
-            <View style={styles.descriptionCard}>
-              <Text style={styles.descriptionTitle}>Описание</Text>
-              <Text style={styles.description}>{tool.description}</Text>
+            <View style={[styles.descriptionCard, { backgroundColor: cardColor }]}>
+              <Text style={[styles.descriptionTitle, { color: textColor }]}>Описание</Text>
+              <Text style={[styles.description, { color: textSecondaryColor }]}>{tool.description}</Text>
             </View>
           )}
         </View>
       </ScrollView>
 
-      <View style={styles.actionBar}>
+      <View style={[styles.actionBar, { backgroundColor: cardColor, borderTopColor: borderColor }]}>
         {isAvailable && (
           <TouchableOpacity
-            style={[styles.actionButton, styles.actionButtonPrimary]}
+            style={[styles.actionButton, styles.actionButtonPrimary, { backgroundColor: primaryColor }]}
             onPress={handleTake}
             disabled={processing}
           >
@@ -320,22 +324,26 @@ export default function ToolDetailScreen() {
         {isMyTool && (
           <>
             <TouchableOpacity
-              style={[styles.actionButton, styles.actionButtonSecondary]}
+              style={[
+                styles.actionButton,
+                styles.actionButtonSecondary,
+                { backgroundColor: backgroundColor, borderColor: primaryColor }
+              ]}
               onPress={handleReturn}
               disabled={processing}
             >
               {processing ? (
-                <ActivityIndicator color="#3182CE" />
+                <ActivityIndicator color={primaryColor} />
               ) : (
                 <>
-                  <Ionicons name="return-down-back" size={24} color="#3182CE" />
-                  <Text style={styles.actionButtonTextSecondary}>ВЕРНУТЬ</Text>
+                  <Ionicons name="return-down-back" size={24} color={primaryColor} />
+                  <Text style={[styles.actionButtonTextSecondary, { color: primaryColor }]}>ВЕРНУТЬ</Text>
                 </>
               )}
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.actionButton, styles.actionButtonPrimary]}
+              style={[styles.actionButton, styles.actionButtonPrimary, { backgroundColor: primaryColor }]}
               onPress={async () => {
                 if (users.length === 0) {
                   await fetchUsers();
@@ -351,8 +359,8 @@ export default function ToolDetailScreen() {
         )}
         {!isAvailable && !isMyTool && (
           <View style={styles.notAvailableContainer}>
-            <Ionicons name="lock-closed" size={24} color="#718096" />
-            <Text style={styles.notAvailableText}>
+            <Ionicons name="lock-closed" size={24} color={textSecondaryColor} />
+            <Text style={[styles.notAvailableText, { color: textSecondaryColor }]}>
               Инструмент занят другим пользователем
             </Text>
           </View>
@@ -365,21 +373,21 @@ export default function ToolDetailScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowTransferModal(false)}
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
+        <View style={[styles.modalContainer, { backgroundColor }]}>
+          <View style={[styles.modalHeader, { backgroundColor: cardColor, borderBottomColor: borderColor }]}>
             <TouchableOpacity onPress={() => setShowTransferModal(false)}>
-              <Text style={styles.modalCancel}>Отмена</Text>
+              <Text style={[styles.modalCancel, { color: textSecondaryColor }]}>Отмена</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Передать инструмент</Text>
+            <Text style={[styles.modalTitle, { color: textColor }]}>Передать инструмент</Text>
             <TouchableOpacity onPress={handleTransfer} disabled={processing}>
-              <Text style={[styles.modalSave, processing && styles.modalSaveDisabled]}>
+              <Text style={[styles.modalSave, { color: primaryColor }, processing && styles.modalSaveDisabled]}>
                 {processing ? 'Передача...' : 'Передать'}
               </Text>
             </TouchableOpacity>
           </View>
-          
+
           <ScrollView style={styles.modalContent}>
-            <Text style={styles.modalSubtitle}>Выберите пользователя</Text>
+            <Text style={[styles.modalSubtitle, { color: textColor }]}>Выберите пользователя</Text>
             {users
               .filter(u => u.id !== user?.id)
               .map((u) => (
@@ -387,19 +395,20 @@ export default function ToolDetailScreen() {
                   key={u.id}
                   style={[
                     styles.userOption,
-                    transferUserId === u.id && styles.userOptionActive,
+                    { backgroundColor: cardColor },
+                    transferUserId === u.id && { borderColor: primaryColor },
                   ]}
                   onPress={() => setTransferUserId(u.id)}
                 >
-                  <View style={styles.userAvatar}>
-                    <Ionicons name="person" size={24} color="#3182CE" />
+                  <View style={[styles.userAvatar, { backgroundColor: backgroundColor }]}>
+                    <Ionicons name="person" size={24} color={primaryColor} />
                   </View>
                   <View style={styles.userInfo}>
-                    <Text style={styles.userName}>{u.name}</Text>
-                    <Text style={styles.userEmail}>{u.email}</Text>
+                    <Text style={[styles.userName, { color: textColor }]}>{u.name}</Text>
+                    <Text style={[styles.userEmail, { color: textSecondaryColor }]}>{u.email}</Text>
                   </View>
                   {transferUserId === u.id && (
-                    <Ionicons name="checkmark-circle" size={24} color="#3182CE" />
+                    <Ionicons name="checkmark-circle" size={24} color={primaryColor} />
                   )}
                 </TouchableOpacity>
               ))}
@@ -413,41 +422,42 @@ export default function ToolDetailScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowReturnModal(false)}
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
+        <View style={[styles.modalContainer, { backgroundColor }]}>
+          <View style={[styles.modalHeader, { backgroundColor: cardColor, borderBottomColor: borderColor }]}>
             <TouchableOpacity onPress={() => setShowReturnModal(false)}>
-              <Text style={styles.modalCancel}>Отмена</Text>
+              <Text style={[styles.modalCancel, { color: textSecondaryColor }]}>Отмена</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Вернуть инструмент</Text>
+            <Text style={[styles.modalTitle, { color: textColor }]}>Вернуть инструмент</Text>
             <TouchableOpacity onPress={handleReturnConfirm} disabled={processing}>
-              <Text style={[styles.modalSave, processing && styles.modalSaveDisabled]}>
+              <Text style={[styles.modalSave, { color: primaryColor }, processing && styles.modalSaveDisabled]}>
                 {processing ? 'Возврат...' : 'Вернуть'}
               </Text>
             </TouchableOpacity>
           </View>
-          
+
           <ScrollView style={styles.modalContent}>
-            <Text style={styles.modalSubtitle}>Выберите склад</Text>
+            <Text style={[styles.modalSubtitle, { color: textColor }]}>Выберите склад</Text>
             {warehouses.map((warehouse) => (
               <TouchableOpacity
                 key={warehouse.id}
                 style={[
                   styles.warehouseOption,
-                  selectedWarehouseId === warehouse.id && styles.warehouseOptionActive,
+                  { backgroundColor: cardColor },
+                  selectedWarehouseId === warehouse.id && { borderColor: primaryColor },
                 ]}
                 onPress={() => setSelectedWarehouseId(warehouse.id)}
               >
-                <View style={styles.warehouseIcon}>
-                  <Ionicons name="business" size={24} color="#3182CE" />
+                <View style={[styles.warehouseIcon, { backgroundColor: backgroundColor }]}>
+                  <Ionicons name="business" size={24} color={primaryColor} />
                 </View>
                 <View style={styles.warehouseInfo}>
-                  <Text style={styles.warehouseName}>{warehouse.name}</Text>
+                  <Text style={[styles.warehouseName, { color: textColor }]}>{warehouse.name}</Text>
                   {warehouse.location && (
-                    <Text style={styles.warehouseLocation}>{warehouse.location}</Text>
+                    <Text style={[styles.warehouseLocation, { color: textSecondaryColor }]}>{warehouse.location}</Text>
                   )}
                 </View>
                 {selectedWarehouseId === warehouse.id && (
-                  <Ionicons name="checkmark-circle" size={24} color="#3182CE" />
+                  <Ionicons name="checkmark-circle" size={24} color={primaryColor} />
                 )}
               </TouchableOpacity>
             ))}
@@ -461,7 +471,6 @@ export default function ToolDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   scrollView: {
     flex: 1,
@@ -474,12 +483,10 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 16,
-    color: '#718096',
   },
   imageContainer: {
     width: '100%',
     height: 300,
-    backgroundColor: '#F7FAFC',
   },
   image: {
     width: '100%',
@@ -499,16 +506,13 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#2D3748',
     marginBottom: 8,
   },
   serial: {
     fontSize: 16,
-    color: '#718096',
     marginBottom: 12,
   },
   categoryBadge: {
-    backgroundColor: '#EBF8FF',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
@@ -518,7 +522,6 @@ const styles = StyleSheet.create({
   categoryText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#3182CE',
   },
   statusBanner: {
     borderRadius: 16,
@@ -537,7 +540,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ED8936',
   },
   statusBusy: {
-    backgroundColor: '#3182CE',
+    // backgroundColor set dynamically
   },
   statusBannerHeader: {
     flexDirection: 'row',
@@ -557,7 +560,6 @@ const styles = StyleSheet.create({
     marginLeft: 48,
   },
   descriptionCard: {
-    backgroundColor: 'white',
     borderRadius: 16,
     padding: 20,
     shadowColor: '#000',
@@ -569,12 +571,10 @@ const styles = StyleSheet.create({
   descriptionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#2D3748',
     marginBottom: 8,
   },
   description: {
     fontSize: 16,
-    color: '#4A5568',
     lineHeight: 24,
   },
   actionBar: {
@@ -582,11 +582,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'white',
     padding: 16,
     paddingBottom: 32,
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
     gap: 12,
   },
   actionButton: {
@@ -598,12 +596,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   actionButtonPrimary: {
-    backgroundColor: '#3182CE',
+    // color set dynamically
   },
   actionButtonSecondary: {
-    backgroundColor: '#EBF8FF',
     borderWidth: 2,
-    borderColor: '#3182CE',
   },
   actionButtonText: {
     fontSize: 18,
@@ -614,7 +610,6 @@ const styles = StyleSheet.create({
   actionButtonTextSecondary: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#3182CE',
     letterSpacing: 1,
   },
   notAvailableContainer: {
@@ -626,36 +621,29 @@ const styles = StyleSheet.create({
   },
   notAvailableText: {
     fontSize: 16,
-    color: '#718096',
     textAlign: 'center',
     flex: 1,
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: 'white',
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
   },
   modalCancel: {
     fontSize: 16,
-    color: '#718096',
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#2D3748',
   },
   modalSave: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#3182CE',
   },
   modalSaveDisabled: {
     color: '#CBD5E0',
@@ -667,13 +655,11 @@ const styles = StyleSheet.create({
   modalSubtitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#2D3748',
     marginBottom: 16,
   },
   userOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
     padding: 16,
     borderRadius: 12,
     marginBottom: 12,
@@ -682,16 +668,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-  },
-  userOptionActive: {
     borderWidth: 2,
-    borderColor: '#3182CE',
+    borderColor: 'transparent',
   },
   userAvatar: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#EBF8FF',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -702,17 +685,14 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#2D3748',
     marginBottom: 4,
   },
   userEmail: {
     fontSize: 14,
-    color: '#718096',
   },
   warehouseOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
     padding: 16,
     borderRadius: 12,
     marginBottom: 12,
@@ -721,16 +701,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-  },
-  warehouseOptionActive: {
     borderWidth: 2,
-    borderColor: '#3182CE',
+    borderColor: 'transparent',
   },
   warehouseIcon: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#EBF8FF',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -741,11 +718,9 @@ const styles = StyleSheet.create({
   warehouseName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#2D3748',
     marginBottom: 4,
   },
   warehouseLocation: {
     fontSize: 14,
-    color: '#718096',
   },
 });

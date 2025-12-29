@@ -8,7 +8,6 @@ import {
   Switch,
   Alert,
   Linking,
-  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -16,19 +15,27 @@ import { Camera } from 'expo-camera';
 import * as Application from 'expo-application';
 import useAuthStore from '../../store/authStore';
 import useSettingsStore from '../../store/settingsStore';
+import { useThemeColor } from '../../hooks/useThemeColor';
 
 export default function SettingsScreen() {
   const router = useRouter();
   const { user, logout } = useAuthStore();
   const {
     hapticsEnabled,
-    soundEnabled,
     theme,
     setHaptics,
-    setSound,
     setTheme,
     loadSettings,
   } = useSettingsStore();
+
+  // Theme colors
+  const backgroundColor = useThemeColor({}, 'background');
+  const cardColor = useThemeColor({}, 'card');
+  const textColor = useThemeColor({}, 'text');
+  const textSecondaryColor = useThemeColor({}, 'textSecondary');
+  const primaryColor = useThemeColor({}, 'primary');
+  const iconColor = useThemeColor({}, 'icon');
+  const borderColor = useThemeColor({}, 'border');
 
   const [cameraPermission, setCameraPermission] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
 
@@ -53,7 +60,6 @@ export default function SettingsScreen() {
           style: 'destructive',
           onPress: async () => {
             await logout();
-            router.replace('/(auth)/login');
           },
         },
       ]
@@ -106,15 +112,15 @@ export default function SettingsScreen() {
   const buildNumber = Application.nativeBuildVersion || '1';
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, { backgroundColor }]}>
       {/* Управление аккаунтом */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>УПРАВЛЕНИЕ АККАУНТОМ</Text>
-        
-        <View style={styles.card}>
-          <Text style={styles.userInfoLabel}>Вы вошли как:</Text>
-          <Text style={styles.userName}>{user?.name}</Text>
-          <Text style={styles.userEmail}>{user?.email}</Text>
+        <Text style={[styles.sectionTitle, { color: textSecondaryColor }]}>УПРАВЛЕНИЕ АККАУНТОМ</Text>
+
+        <View style={[styles.card, { backgroundColor: cardColor, shadowColor: borderColor }]}>
+          <Text style={[styles.userInfoLabel, { color: textSecondaryColor }]}>Вы вошли как:</Text>
+          <Text style={[styles.userName, { color: textColor }]}>{user?.name}</Text>
+          <Text style={[styles.userEmail, { color: textSecondaryColor }]}>{user?.email}</Text>
         </View>
 
         <TouchableOpacity
@@ -129,15 +135,15 @@ export default function SettingsScreen() {
 
       {/* Поведение приложения */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>ПОВЕДЕНИЕ ПРИЛОЖЕНИЯ</Text>
-        
-        <View style={styles.card}>
+        <Text style={[styles.sectionTitle, { color: textSecondaryColor }]}>ПОВЕДЕНИЕ ПРИЛОЖЕНИЯ</Text>
+
+        <View style={[styles.card, { backgroundColor: cardColor, shadowColor: borderColor }]}>
           <View style={styles.settingRow}>
             <View style={styles.settingLeft}>
-              <Ionicons name="phone-portrait-outline" size={20} color="#718096" />
+              <Ionicons name="phone-portrait-outline" size={20} color={textSecondaryColor} />
               <View style={styles.settingTextContainer}>
-                <Text style={styles.settingText}>Виброотклик при сканировании</Text>
-                <Text style={styles.settingDescription}>Тактильная отдача при считывании QR</Text>
+                <Text style={[styles.settingText, { color: textColor }]}>Виброотклик при сканировании</Text>
+                <Text style={[styles.settingDescription, { color: textSecondaryColor }]}>Тактильная отдача при считывании QR</Text>
               </View>
             </View>
             <Switch
@@ -148,77 +154,26 @@ export default function SettingsScreen() {
             />
           </View>
 
-          <View style={styles.divider} />
-
-          <View style={styles.settingRow}>
-            <View style={styles.settingLeft}>
-              <Ionicons name="volume-medium-outline" size={20} color="#718096" />
-              <View style={styles.settingTextContainer}>
-                <Text style={styles.settingText}>Звук при сканировании</Text>
-                <Text style={styles.settingDescription}>Звуковой сигнал при считывании QR</Text>
-              </View>
-            </View>
-            <Switch
-              value={soundEnabled}
-              onValueChange={setSound}
-              trackColor={{ false: '#CBD5E0', true: '#63B3ED' }}
-              thumbColor={soundEnabled ? '#3182CE' : '#E2E8F0'}
-            />
-          </View>
-
-          <View style={styles.divider} />
-
           <TouchableOpacity
             style={styles.settingRow}
             onPress={handleThemeChange}
             activeOpacity={0.7}
           >
             <View style={styles.settingLeft}>
-              <Ionicons name="color-palette-outline" size={20} color="#718096" />
+              <Ionicons name="color-palette-outline" size={20} color={textSecondaryColor} />
               <View style={styles.settingTextContainer}>
-                <Text style={styles.settingText}>Тема оформления</Text>
-                <Text style={styles.settingDescription}>{getThemeLabel(theme)}</Text>
+                <Text style={[styles.settingText, { color: textColor }]}>Тема оформления</Text>
+                <Text style={[styles.settingDescription, { color: textSecondaryColor }]}>{getThemeLabel(theme)}</Text>
               </View>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#CBD5E0" />
+            <Ionicons name="chevron-forward" size={20} color={textSecondaryColor} />
           </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Разрешения и Информация */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>РАЗРЕШЕНИЯ</Text>
-        
-        <View style={styles.card}>
-          <View style={styles.settingRow}>
-            <View style={styles.settingLeft}>
-              <Ionicons name="camera-outline" size={20} color="#718096" />
-              <View style={styles.settingTextContainer}>
-                <Text style={styles.settingText}>Доступ к камере</Text>
-                <Text style={[
-                  styles.settingDescription,
-                  cameraPermission === 'granted' ? styles.permissionGranted : styles.permissionDenied
-                ]}>
-                  {cameraPermission === 'granted' ? 'Разрешен' : 'Запрещен'}
-                </Text>
-              </View>
-            </View>
-            {cameraPermission !== 'granted' && (
-              <TouchableOpacity
-                style={styles.openSettingsButton}
-                onPress={openAppSettings}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.openSettingsButtonText}>Открыть настройки</Text>
-              </TouchableOpacity>
-            )}
-          </View>
         </View>
       </View>
 
       {/* О приложении */}
       <View style={styles.aboutSection}>
-        <Text style={styles.aboutText}>
+        <Text style={[styles.aboutText, { color: textSecondaryColor }]}>
           ToolManager, версия {appVersion} (сборка {buildNumber})
         </Text>
       </View>
@@ -229,7 +184,6 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   section: {
     padding: 16,
@@ -237,16 +191,13 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#718096',
     letterSpacing: 0.5,
     marginBottom: 12,
     marginLeft: 4,
   },
   card: {
-    backgroundColor: 'white',
     borderRadius: 12,
     padding: 16,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -255,18 +206,15 @@ const styles = StyleSheet.create({
   },
   userInfoLabel: {
     fontSize: 14,
-    color: '#718096',
     marginBottom: 8,
   },
   userName: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#2D3748',
     marginBottom: 4,
   },
   userEmail: {
     fontSize: 16,
-    color: '#4A5568',
   },
   logoutButton: {
     flexDirection: 'row',
@@ -306,37 +254,16 @@ const styles = StyleSheet.create({
   },
   settingText: {
     fontSize: 16,
-    color: '#2D3748',
     fontWeight: '500',
     marginBottom: 2,
   },
   settingDescription: {
     fontSize: 13,
-    color: '#A0AEC0',
   },
   divider: {
     height: 1,
     backgroundColor: '#E2E8F0',
     marginVertical: 4,
-  },
-  permissionGranted: {
-    color: '#38A169',
-    fontWeight: '600',
-  },
-  permissionDenied: {
-    color: '#E53E3E',
-    fontWeight: '600',
-  },
-  openSettingsButton: {
-    backgroundColor: '#3182CE',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
-  openSettingsButtonText: {
-    fontSize: 12,
-    color: 'white',
-    fontWeight: '600',
   },
   aboutSection: {
     padding: 16,
@@ -346,7 +273,6 @@ const styles = StyleSheet.create({
   },
   aboutText: {
     fontSize: 12,
-    color: '#A0AEC0',
     textAlign: 'center',
   },
 });

@@ -9,14 +9,15 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import useAuthStore from '../../store/authStore';
 import api from '../../services/api';
 import { Tool, Category } from '../../types';
-import { PERMISSIONS } from '../../constants/permissions';
 import FloatingActionButton from '../../components/FloatingActionButton';
+import { useThemeColor } from '../../hooks/useThemeColor';
 
 export default function ToolsScreen() {
   const router = useRouter();
@@ -28,6 +29,17 @@ export default function ToolsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+
+  // Theme colors
+  const backgroundColor = useThemeColor({}, 'background');
+  const cardColor = useThemeColor({}, 'card');
+  const textColor = useThemeColor({}, 'text');
+  const textSecondaryColor = useThemeColor({}, 'textSecondary');
+  const primaryColor = useThemeColor({}, 'primary');
+  const iconColor = useThemeColor({}, 'icon');
+  const borderColor = useThemeColor({}, 'border');
+  const inputBackground = useThemeColor({}, 'inputBackground');
+  const refreshControlColor = useThemeColor({}, 'refreshControl');
 
   const fetchData = async () => {
     try {
@@ -60,7 +72,7 @@ export default function ToolsScreen() {
 
   useEffect(() => {
     let filtered = tools;
-    
+
     if (searchQuery) {
       filtered = filtered.filter(
         (tool) =>
@@ -68,11 +80,11 @@ export default function ToolsScreen() {
           tool.serialNumber?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
-    
+
     if (selectedCategory) {
       filtered = filtered.filter((tool) => tool.categoryId === selectedCategory);
     }
-    
+
     setFilteredTools(filtered);
   }, [searchQuery, selectedCategory, tools]);
 
@@ -87,71 +99,81 @@ export default function ToolsScreen() {
 
     return (
       <TouchableOpacity
-        style={styles.toolCard}
+        style={[styles.toolCard, { backgroundColor: cardColor }]}
         onPress={() => router.push(`/tool/${item.id}`)}
+        activeOpacity={0.7}
       >
-        <View style={styles.toolIcon}>
-          <Ionicons 
-            name="construct" 
-            size={28} 
-            color={isMyTool ? '#3182CE' : isAvailable ? '#38A169' : '#718096'} 
-          />
+        <View style={[styles.toolIcon, { backgroundColor: backgroundColor }]}>
+          {item.imageUrl ? (
+            <Image
+              source={{ uri: item.imageUrl }}
+              style={styles.toolImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <Ionicons
+              name="construct"
+              size={28}
+              color={isMyTool ? primaryColor : isAvailable ? '#38A169' : iconColor}
+            />
+          )}
         </View>
         <View style={styles.toolContent}>
-          <Text style={styles.toolName}>{item.name}</Text>
+          <Text style={[styles.toolName, { color: textColor }]}>{item.name}</Text>
           {item.serialNumber && (
-            <Text style={styles.toolSerial}>SN: {item.serialNumber}</Text>
+            <Text style={[styles.toolSerial, { color: textSecondaryColor }]}>SN: {item.serialNumber}</Text>
           )}
           <View style={styles.toolMeta}>
             {item.category && (
-              <View style={styles.categoryBadge}>
-                <Text style={styles.categoryText}>{item.category.name}</Text>
+              <View style={[styles.categoryBadge, { backgroundColor: backgroundColor }]}>
+                <Text style={[styles.categoryText, { color: primaryColor }]}>{item.category.name}</Text>
               </View>
             )}
             {isMyTool ? (
-              <View style={[styles.statusBadge, styles.statusBadgeMy]}>
-                <Text style={styles.statusTextMy}>У вас</Text>
+              <View style={[styles.statusBadge, { backgroundColor: backgroundColor }]}>
+                <Text style={[styles.statusTextMy, { color: primaryColor }]}>У вас</Text>
               </View>
             ) : isAvailable ? (
-              <View style={[styles.statusBadge, styles.statusBadgeAvailable]}>
+              <View style={[styles.statusBadge, { backgroundColor: '#F0FFF4' }]}>
                 <Text style={styles.statusTextAvailable}>Доступен</Text>
               </View>
             ) : (
-              <View style={[styles.statusBadge, styles.statusBadgeBusy]}>
-                <Text style={styles.statusTextBusy}>
+              <View style={[styles.statusBadge, { backgroundColor: backgroundColor }]}>
+                <Text style={[styles.statusTextBusy, { color: textSecondaryColor }]}>
                   {item.currentUser?.name || 'Занят'}
                 </Text>
               </View>
             )}
           </View>
         </View>
-        <Ionicons name="chevron-forward" size={24} color="#CBD5E0" />
+        <Ionicons name="chevron-forward" size={24} color={iconColor} />
       </TouchableOpacity>
     );
   };
 
   if (loading) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#3182CE" />
+      <View style={[styles.centerContainer, { backgroundColor }]}>
+        <ActivityIndicator size="large" color={primaryColor} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.searchSection}>
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={20} color="#718096" />
+    <View style={[styles.container, { backgroundColor }]}>
+      <View style={[styles.searchSection, { backgroundColor: cardColor, borderBottomColor: borderColor }]}>
+        <View style={[styles.searchBar, { backgroundColor: inputBackground }]}>
+          <Ionicons name="search" size={20} color={textSecondaryColor} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: textColor }]}
             placeholder="Поиск по названию или S/N"
+            placeholderTextColor={textSecondaryColor}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
           {searchQuery ? (
             <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={20} color="#CBD5E0" />
+              <Ionicons name="close-circle" size={20} color={textSecondaryColor} />
             </TouchableOpacity>
           ) : null}
         </View>
@@ -166,13 +188,18 @@ export default function ToolsScreen() {
             <TouchableOpacity
               style={[
                 styles.categoryChip,
-                selectedCategory === item.id && styles.categoryChipActive,
+                {
+                  backgroundColor: inputBackground,
+                  borderColor: borderColor
+                },
+                selectedCategory === item.id && { backgroundColor: primaryColor, borderColor: primaryColor },
               ]}
               onPress={() => setSelectedCategory(item.id)}
             >
               <Text
                 style={[
                   styles.categoryChipText,
+                  { color: textSecondaryColor },
                   selectedCategory === item.id && styles.categoryChipTextActive,
                 ]}
               >
@@ -183,8 +210,8 @@ export default function ToolsScreen() {
         />
       </View>
 
-      <View style={styles.resultsHeader}>
-        <Text style={styles.resultsText}>
+      <View style={[styles.resultsHeader, { backgroundColor: backgroundColor }]}>
+        <Text style={[styles.resultsText, { color: textSecondaryColor }]}>
           {filteredTools.length} {filteredTools.length === 1 ? 'инструмент' : 'инструментов'}
         </Text>
       </View>
@@ -195,13 +222,18 @@ export default function ToolsScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[refreshControlColor]} // Dynamic
+            tintColor={refreshControlColor} // Dynamic
+          />
         }
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Ionicons name="cube-outline" size={64} color="#CBD5E0" />
-            <Text style={styles.emptyText}>Инструменты не найдены</Text>
-            <Text style={styles.emptySubtext}>
+            <Ionicons name="cube-outline" size={64} color={iconColor} />
+            <Text style={[styles.emptyText, { color: textSecondaryColor }]}>Инструменты не найдены</Text>
+            <Text style={[styles.emptySubtext, { color: textSecondaryColor }]}>
               {searchQuery || selectedCategory
                 ? 'Попробуйте изменить параметры поиска'
                 : 'В системе пока нет инструментов'}
@@ -217,25 +249,20 @@ export default function ToolsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
   },
   searchSection: {
-    backgroundColor: 'white',
     padding: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F7FAFC',
     borderRadius: 12,
     paddingHorizontal: 12,
     marginBottom: 12,
@@ -245,7 +272,6 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 44,
     fontSize: 16,
-    color: '#2D3748',
   },
   categoryList: {
     gap: 8,
@@ -254,18 +280,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#F7FAFC',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  categoryChipActive: {
-    backgroundColor: '#3182CE',
-    borderColor: '#3182CE',
   },
   categoryChipText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#718096',
   },
   categoryChipTextActive: {
     color: 'white',
@@ -273,11 +292,9 @@ const styles = StyleSheet.create({
   resultsHeader: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#F7FAFC',
   },
   resultsText: {
     fontSize: 14,
-    color: '#718096',
     fontWeight: '500',
   },
   listContent: {
@@ -286,7 +303,6 @@ const styles = StyleSheet.create({
   toolCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
@@ -300,10 +316,14 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 12,
-    backgroundColor: '#F7FAFC',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+    overflow: 'hidden',
+  },
+  toolImage: {
+    width: '100%',
+    height: '100%',
   },
   toolContent: {
     flex: 1,
@@ -311,12 +331,10 @@ const styles = StyleSheet.create({
   toolName: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#2D3748',
     marginBottom: 4,
   },
   toolSerial: {
     fontSize: 14,
-    color: '#718096',
     marginBottom: 8,
   },
   toolMeta: {
@@ -325,7 +343,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   categoryBadge: {
-    backgroundColor: '#EBF8FF',
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 12,
@@ -333,36 +350,24 @@ const styles = StyleSheet.create({
   categoryText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#3182CE',
   },
   statusBadge: {
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 12,
   },
-  statusBadgeMy: {
-    backgroundColor: '#EBF8FF',
-  },
   statusTextMy: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#3182CE',
-  },
-  statusBadgeAvailable: {
-    backgroundColor: '#F0FFF4',
   },
   statusTextAvailable: {
     fontSize: 12,
     fontWeight: '600',
     color: '#38A169',
   },
-  statusBadgeBusy: {
-    backgroundColor: '#F7FAFC',
-  },
   statusTextBusy: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#718096',
   },
   emptyState: {
     alignItems: 'center',
@@ -371,13 +376,11 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#718096',
     marginTop: 16,
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#A0AEC0',
     textAlign: 'center',
     paddingHorizontal: 32,
   },

@@ -3,14 +3,23 @@ import { Ionicons } from '@expo/vector-icons';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import useAuthStore from '../../store/authStore';
 import { PERMISSIONS } from '../../constants/permissions';
+import { useThemeColor } from '../../hooks/useThemeColor';
 
 export default function TabLayout() {
   const { isAuthenticated, loading, isBoss, hasPermission } = useAuthStore();
+  const backgroundColor = useThemeColor({}, 'background');
+  const primaryColor = useThemeColor({}, 'primary');
+  const tabBarActive = useThemeColor({}, 'tabIconSelected');
+  const tabBarInactive = useThemeColor({}, 'tabIconDefault');
+  const headerBackground = useThemeColor({}, 'primary');
+  const tabBackgroundColor = useThemeColor({}, 'card');
+  const tabBorderColor = useThemeColor({}, 'border');
+  const headerText = '#ffffff'; // Always white for contrast on primary color
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3182CE" />
+      <View style={[styles.loadingContainer, { backgroundColor }]}>
+        <ActivityIndicator size="large" color={primaryColor} />
       </View>
     );
   }
@@ -22,12 +31,16 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#3182CE',
-        tabBarInactiveTintColor: '#718096',
-        headerStyle: {
-          backgroundColor: '#3182CE',
+        tabBarActiveTintColor: tabBarActive,
+        tabBarInactiveTintColor: tabBarInactive,
+        tabBarStyle: {
+          backgroundColor: tabBackgroundColor,
+          borderTopColor: tabBorderColor,
         },
-        headerTintColor: '#fff',
+        headerStyle: {
+          backgroundColor: headerBackground,
+        },
+        headerTintColor: headerText,
         headerTitleStyle: {
           fontWeight: 'bold',
         },
@@ -82,6 +95,5 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
   },
 });

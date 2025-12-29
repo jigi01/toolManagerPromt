@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import useAuthStore from '../../store/authStore';
+import { useThemeColor } from '../../hooks/useThemeColor';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -20,9 +21,18 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Theme colors
+  const backgroundColor = useThemeColor({}, 'background');
+  const cardColor = useThemeColor({}, 'card');
+  const textColor = useThemeColor({}, 'text');
+  const textSecondaryColor = useThemeColor({}, 'textSecondary');
+  const primaryColor = useThemeColor({}, 'primary');
+  const borderColor = useThemeColor({}, 'border');
+  const inputBackground = useThemeColor({}, 'inputBackground');
+
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert('Ошибка', 'Пожалуйста, заполните все поля');
       return;
     }
 
@@ -31,7 +41,7 @@ export default function LoginScreen() {
       await login(email, password);
       router.replace('/(tabs)');
     } catch (error: any) {
-      Alert.alert('Login Failed', error.response?.data?.error || 'Invalid credentials');
+      Alert.alert('Ошибка входа', error.response?.data?.error || 'Неверные данные');
     } finally {
       setLoading(false);
     }
@@ -39,20 +49,21 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.content}>
-          <Text style={styles.title}>ToolManager</Text>
-          <Text style={styles.subtitle}>Sign in to your account</Text>
+          <Text style={[styles.title, { color: textColor }]}>ToolManager</Text>
+          <Text style={[styles.subtitle, { color: textSecondaryColor }]}>Войдите в свой аккаунт</Text>
 
-          <View style={styles.form}>
+          <View style={[styles.form, { backgroundColor: cardColor, shadowColor: borderColor }]}>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Email</Text>
+              <Text style={[styles.label, { color: textColor }]}>Email</Text>
               <TextInput
-                style={styles.input}
-                placeholder="Enter your email"
+                style={[styles.input, { backgroundColor: inputBackground, borderColor: borderColor, color: textColor }]}
+                placeholder="Введите ваш email"
+                placeholderTextColor={textSecondaryColor}
                 value={email}
                 onChangeText={setEmail}
                 autoCapitalize="none"
@@ -62,10 +73,11 @@ export default function LoginScreen() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Password</Text>
+              <Text style={[styles.label, { color: textColor }]}>Пароль</Text>
               <TextInput
-                style={styles.input}
-                placeholder="Enter your password"
+                style={[styles.input, { backgroundColor: inputBackground, borderColor: borderColor, color: textColor }]}
+                placeholder="Введите ваш пароль"
+                placeholderTextColor={textSecondaryColor}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
@@ -74,21 +86,16 @@ export default function LoginScreen() {
             </View>
 
             <TouchableOpacity
-              style={[styles.button, loading && styles.buttonDisabled]}
+              style={[
+                styles.button,
+                { backgroundColor: primaryColor },
+                loading && styles.buttonDisabled
+              ]}
               onPress={handleLogin}
               disabled={loading}
             >
               <Text style={styles.buttonText}>
-                {loading ? 'Signing in...' : 'Sign In'}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => router.push('/(auth)/register')}
-              disabled={loading}
-            >
-              <Text style={styles.linkText}>
-                Don't have an account? <Text style={styles.linkBold}>Sign Up</Text>
+                {loading ? 'Вход...' : 'Войти'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -101,7 +108,6 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   scrollContent: {
     flexGrow: 1,
@@ -114,13 +120,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#2D3748',
     textAlign: 'center',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#718096',
     textAlign: 'center',
     marginBottom: 32,
   },
@@ -128,7 +132,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     padding: 24,
     borderRadius: 12,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -140,20 +143,16 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#2D3748',
     marginBottom: 8,
   },
   input: {
     height: 48,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
     borderRadius: 8,
     paddingHorizontal: 16,
     fontSize: 16,
-    backgroundColor: 'white',
   },
   button: {
-    backgroundColor: '#3182CE',
     height: 48,
     borderRadius: 8,
     justifyContent: 'center',
@@ -162,20 +161,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   buttonDisabled: {
-    backgroundColor: '#90CDF4',
+    opacity: 0.7,
   },
   buttonText: {
     color: 'white',
     fontSize: 16,
-    fontWeight: '600',
-  },
-  linkText: {
-    textAlign: 'center',
-    color: '#718096',
-    fontSize: 14,
-  },
-  linkBold: {
-    color: '#3182CE',
     fontWeight: '600',
   },
 });

@@ -24,6 +24,9 @@
       "android": {
         "buildType": "app-bundle"
       },
+      "ios": {
+        "simulator": false
+      },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://toolmanager.ru/api"
       }

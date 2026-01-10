@@ -30,6 +30,7 @@ enum Permission {
   // Прием-Передача
   TOOL_TRANSFER     // Передавать инструмент другому сотруднику
   TOOL_CHECKIN      // Принимать инструмент "на склад" (возврат)
+  TOOL_MANAGE_ALL   // Управление любыми инструментами (силовое)
 
   // Управление складами
   WAREHOUSE_CREATE  // Создавать склад
@@ -78,6 +79,16 @@ model User {
   name      String
   createdAt DateTime @default(now())
 
+  // Verification
+  isVerified             Boolean   @default(false)
+  verificationCode       String?
+  verificationCodeExpires DateTime?
+
+  // OAuth Providers
+
+  yandexId  String?  @unique
+  avatarUrl String?
+
   // Привязка к компании
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
@@ -99,7 +110,7 @@ model User {
 model Invitation {
   id        String   @id @default(cuid())
   token     String   @unique // Уникальный токен приглашения
-  email     String   // Email приглашенного сотрудника
+  email     String?   // Email приглашенного сотрудника
   companyId String
   company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   
@@ -158,6 +169,9 @@ model Tool {
   // История перемещений
   history ToolHistory[]
 
+  // Ручной/Внешний QR-код (если есть)
+  qrCode String? @unique
+
   @@unique([companyId, serialNumber])
 }
 
@@ -212,4 +226,24 @@ model Category {
 
   // Не позволяет создавать категории с одинаковым именем в рамках одной компании
   @@unique([name, companyId])
+}
+
+// Модель для временного хранения данных регистрации до подтверждения Email
+model PendingRegistration {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String   // Хэшированный пароль
+  name      String
+  
+  // Данные для создания компании (если новый босс)
+  companyName String?
+
+  // Данные для присоединения (если приглашение)
+  inviteToken String?
+
+  // Код подтверждения
+  verificationCode String
+  expiresAt        DateTime
+
+  createdAt DateTime @default(now())
 }

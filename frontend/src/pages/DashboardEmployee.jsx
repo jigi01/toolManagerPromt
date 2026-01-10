@@ -11,6 +11,7 @@ import {
   Card,
   CardBody,
   HStack,
+  Stack,
   SimpleGrid,
   Input,
   FormControl,
@@ -51,7 +52,7 @@ const DashboardEmployee = () => {
       params.append('currentUserId', user.id);
       if (filterCategory) params.append('categoryId', filterCategory);
       if (searchQuery) params.append('search', searchQuery);
-      
+
       const queryString = params.toString();
       const response = await api.get(`/tools?${queryString}`);
       setMyTools(response.data.tools);
@@ -162,7 +163,7 @@ const DashboardEmployee = () => {
 
   return (
     <VStack spacing={8} align="stretch">
-      <HStack justify="space-between">
+      <Stack direction={{ base: 'column', md: 'row' }} justify="space-between" align={{ base: 'start', md: 'center' }}>
         <Box>
           <Heading size="lg" mb={2}>
             Мои Инструменты
@@ -191,11 +192,11 @@ const DashboardEmployee = () => {
             </Button>
           </HStack>
         )}
-      </HStack>
+      </Stack>
 
       {myTools.length > 0 && (
         <VStack spacing={4} align="stretch">
-          <HStack spacing={4}>
+          <Stack direction={{ base: 'column', md: 'row' }} spacing={4}>
             <Box flex="1">
               <FormControl>
                 <Box position="relative">
@@ -209,10 +210,10 @@ const DashboardEmployee = () => {
                     <FiSearch color="gray" />
                   </Box>
                   {searchQuery && (
-                    <Box 
-                      position="absolute" 
-                      right={3} 
-                      top="50%" 
+                    <Box
+                      position="absolute"
+                      right={3}
+                      top="50%"
                       transform="translateY(-50%)"
                       cursor="pointer"
                       onClick={() => setSearchQuery('')}
@@ -227,7 +228,7 @@ const DashboardEmployee = () => {
               placeholder="Все категории"
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
-              maxW="250px"
+              maxW={{ base: 'full', md: '250px' }}
             >
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
@@ -247,7 +248,7 @@ const DashboardEmployee = () => {
                 Сбросить
               </Button>
             )}
-          </HStack>
+          </Stack>
         </VStack>
       )}
 

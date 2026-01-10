@@ -30,10 +30,10 @@ const useAuthStore = create((set, get) => ({
     try {
       const response = await api.get('/auth/me');
       set({
-        user: response.data.user,
+        user: response.data,
         isAuthenticated: true,
-        isBoss: response.data.user.role?.isBoss || false,
-        permissions: response.data.user.role?.permissions || [],
+        isBoss: response.data.role?.isBoss || false,
+        permissions: response.data.role?.permissions || [],
         loading: false
       });
       return true;

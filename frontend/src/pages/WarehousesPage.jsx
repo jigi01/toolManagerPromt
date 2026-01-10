@@ -10,6 +10,7 @@ import {
   Card,
   CardBody,
   HStack,
+  Stack,
   useDisclosure,
   Modal,
   ModalOverlay,
@@ -45,15 +46,15 @@ const WarehousesPage = () => {
   const [editingWarehouse, setEditingWarehouse] = useState(null);
   const [deletingWarehouse, setDeletingWarehouse] = useState(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const { 
-    isOpen: isEditOpen, 
-    onOpen: onEditOpen, 
-    onClose: onEditClose 
+  const {
+    isOpen: isEditOpen,
+    onOpen: onEditOpen,
+    onClose: onEditClose
   } = useDisclosure();
-  const { 
-    isOpen: isDeleteOpen, 
-    onOpen: onDeleteOpen, 
-    onClose: onDeleteClose 
+  const {
+    isOpen: isDeleteOpen,
+    onOpen: onDeleteOpen,
+    onClose: onDeleteClose
   } = useDisclosure();
   const cancelRef = useRef();
   const toast = useToast();
@@ -183,7 +184,7 @@ const WarehousesPage = () => {
 
   return (
     <VStack spacing={8} align="stretch">
-      <HStack justify="space-between">
+      <Stack direction={{ base: 'column', md: 'row' }} justify="space-between" align={{ base: 'start', md: 'center' }}>
         <Box>
           <Heading size="lg" mb={2}>
             Склады
@@ -193,11 +194,11 @@ const WarehousesPage = () => {
           </Text>
         </Box>
         {canCreate && (
-          <Button leftIcon={<FiPlus />} colorScheme="blue" onClick={onOpen}>
+          <Button leftIcon={<FiPlus />} colorScheme="blue" onClick={onOpen} w={{ base: 'full', md: 'auto' }}>
             Добавить Склад
           </Button>
         )}
-      </HStack>
+      </Stack>
 
       {warehouses.length === 0 ? (
         <Card>
@@ -224,9 +225,9 @@ const WarehousesPage = () => {
                 <VStack align="stretch" spacing={4}>
                   <HStack justify="space-between">
                     <HStack>
-                      <Box 
-                        p={2} 
-                        bg="blue.50" 
+                      <Box
+                        p={2}
+                        bg="blue.50"
                         borderRadius="md"
                       >
                         <FiPackage size={24} color="#3182CE" />
@@ -267,9 +268,9 @@ const WarehousesPage = () => {
                     </HStack>
                   </HStack>
 
-                  <Box 
-                    p={3} 
-                    bg="gray.50" 
+                  <Box
+                    p={3}
+                    bg="gray.50"
                     borderRadius="md"
                   >
                     <HStack justify="space-between">

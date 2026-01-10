@@ -24,19 +24,23 @@ import TransferModal from './TransferModal';
 import CheckinModal from './CheckinModal';
 import ToolQRCode from './ToolQRCode';
 
-const ToolCard = ({ tool, onDelete, onTransfer, onCheckin, canUpdate, onEdit, currentUserId }) => {
+const ToolCard = ({ tool, onDelete, onTransfer, onCheckin, canUpdate, onEdit, currentUserId, canManageAll }) => {
   const { isOpen: isTransferOpen, onOpen: onTransferOpen, onClose: onTransferClose } = useDisclosure();
   const { isOpen: isCheckinOpen, onOpen: onCheckinOpen, onClose: onCheckinClose } = useDisclosure();
   const [selectedTool, setSelectedTool] = useState(null);
 
   // Проверяем, может ли текущий пользователь передавать этот инструмент
   const canTransferThisTool = onTransfer && (
-    tool.status === 'AVAILABLE' || // Инструмент на складе - может передавать любой с правом TOOL_TRANSFER
-    tool.currentUserId === currentUserId // Инструмент у текущего пользователя
+    tool.status === 'AVAILABLE' || // Инструмент на складе
+    tool.currentUserId === currentUserId || // Инструмент у текущего пользователя
+    canManageAll // Есть право управления всеми инструментами
   );
 
   // Проверяем, может ли текущий пользователь вернуть этот инструмент на склад
-  const canCheckinThisTool = onCheckin && tool.status === 'IN_USE' && tool.currentUserId === currentUserId;
+  const canCheckinThisTool = onCheckin && tool.status === 'IN_USE' && (
+    tool.currentUserId === currentUserId || // Владелец
+    canManageAll // Админ/Босс
+  );
 
   const getStatusBadge = (status) => {
     const statusMap = {
@@ -71,17 +75,19 @@ const ToolCard = ({ tool, onDelete, onTransfer, onCheckin, canUpdate, onEdit, cu
 
   return (
     <>
-      <Card 
-        overflow="hidden" 
+      <Card
+        overflow="hidden"
         variant="outline"
         _hover={{ shadow: 'lg', transform: 'translateY(-2px)' }}
         transition="all 0.2s"
+        width="360px"
+        maxWidth="360px"
       >
         <Image
           src={tool.imageUrl || placeholderImage}
           alt={tool.name}
-          h="200px"
-          w="100%"
+          h="360px"
+          w="360px"
           objectFit="cover"
           fallbackSrc={placeholderImage}
         />
@@ -109,16 +115,16 @@ const ToolCard = ({ tool, onDelete, onTransfer, onCheckin, canUpdate, onEdit, cu
                       Детали
                     </MenuItem>
                     {onEdit && (
-                      <MenuItem 
-                        icon={<FiEdit2 />} 
+                      <MenuItem
+                        icon={<FiEdit2 />}
                         onClick={() => onEdit(tool)}
                       >
                         Редактировать
                       </MenuItem>
                     )}
                     {onDelete && (
-                      <MenuItem 
-                        icon={<FiTrash2 />} 
+                      <MenuItem
+                        icon={<FiTrash2 />}
                         onClick={() => onDelete(tool.id)}
                         color="red.500"
                       >
@@ -140,13 +146,13 @@ const ToolCard = ({ tool, onDelete, onTransfer, onCheckin, canUpdate, onEdit, cu
                     </Badge>
                   )}
                 </HStack>
-                
+
                 {tool.price && (
                   <Text fontSize="sm" fontWeight="bold" color="green.600">
                     {parseFloat(tool.price).toFixed(2)} ₽
                   </Text>
                 )}
-                
+
                 {tool.currentUser ? (
                   <Box>
                     <Text fontSize="sm" color="gray.600">
@@ -167,7 +173,7 @@ const ToolCard = ({ tool, onDelete, onTransfer, onCheckin, canUpdate, onEdit, cu
                   </Box>
                 )}
               </VStack>
-              
+
               <Box>
                 <ToolQRCode tool={tool} size={80} showExpandButton={true} />
               </Box>
@@ -189,7 +195,7 @@ const ToolCard = ({ tool, onDelete, onTransfer, onCheckin, canUpdate, onEdit, cu
               >
                 Детали
               </Button>
-              
+
               {canTransferThisTool && (
                 <Button
                   size="sm"
@@ -201,7 +207,7 @@ const ToolCard = ({ tool, onDelete, onTransfer, onCheckin, canUpdate, onEdit, cu
                   {tool.status === 'AVAILABLE' ? 'Выдать' : 'Передать'}
                 </Button>
               )}
-              
+
               {canCheckinThisTool && (
                 <Button
                   size="sm"
@@ -225,6 +231,8 @@ const ToolCard = ({ tool, onDelete, onTransfer, onCheckin, canUpdate, onEdit, cu
             onClose={onTransferClose}
             tool={selectedTool}
             onSuccess={handleTransferSuccess}
+            currentUserId={currentUserId}
+            canManageAll={canManageAll}
           />
           <CheckinModal
             isOpen={isCheckinOpen}

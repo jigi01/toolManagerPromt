@@ -19,7 +19,7 @@ const BossRoute = ({ children }) => {
   }
 
   if (!isBoss) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <Box>{children}</Box>;

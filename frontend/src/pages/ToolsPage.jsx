@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import {
   Box,
   Heading,
   VStack,
+  Stack,
   Button,
   useToast,
   Spinner,
@@ -34,20 +35,22 @@ import ToolCard from '../components/ToolCard';
 import ToolTable from '../components/ToolTable';
 import EditToolModal from '../components/EditToolModal';
 import { compressImage } from '../utils/imageCompression';
+import { QrReader } from 'react-qr-reader';
 
 const ToolsPage = () => {
   const [tools, setTools] = useState([]);
   const [warehouses, setWarehouses] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [formData, setFormData] = useState({ 
-    name: '', 
-    serialNumber: '', 
+  const [formData, setFormData] = useState({
+    name: '',
+    serialNumber: '',
     description: '',
     imageUrl: '',
     warehouseId: '',
     price: '',
-    categoryId: ''
+    categoryId: '',
+    qrCode: ''
   });
   const [filterStatus, setFilterStatus] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
@@ -61,12 +64,48 @@ const ToolsPage = () => {
   const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
   const toast = useToast();
   const { user, hasPermission } = useAuthStore();
+  const [showQrScanner, setShowQrScanner] = useState(false);
+
+  // Import dynamically or assume it's installed. Using QrReader from react-qr-reader.
+  // Note: We need a way to scan.
+  // Let's create a simple Scan Modal or embed it.
+
+  const scanLock = useRef(false);
+
+  // Reset lock when opening scanner
+  useEffect(() => {
+    if (showQrScanner) {
+      scanLock.current = false;
+    }
+  }, [showQrScanner]);
+
+  const handleScan = (data) => {
+    if (data && !scanLock.current) {
+      scanLock.current = true; // Lock immediately
+
+      const code = data?.text || data;
+      setFormData(prev => ({ ...prev, qrCode: code }));
+      setShowQrScanner(false);
+
+      toast({
+        title: 'QR-код отсканирован',
+        status: 'success',
+        duration: 2000,
+        id: 'qr-scan-toast'
+      });
+    }
+  };
+
+  const handleError = (err) => {
+    console.error(err);
+  };
 
   const canCreate = hasPermission('TOOL_CREATE');
   const canUpdate = hasPermission('TOOL_UPDATE');
   const canDelete = hasPermission('TOOL_DELETE');
   const canTransfer = hasPermission('TOOL_TRANSFER');
   const canCheckin = hasPermission('TOOL_CHECKIN');
+  const canManageAll = hasPermission('TOOL_MANAGE_ALL') || user?.role?.isBoss;
 
   useEffect(() => {
     fetchTools();
@@ -81,7 +120,7 @@ const ToolsPage = () => {
       if (filterCategory) params.append('categoryId', filterCategory);
       if (filterWarehouse) params.append('warehouseId', filterWarehouse);
       if (searchQuery) params.append('search', searchQuery);
-      
+
       const queryString = params.toString();
       const response = await api.get(`/tools${queryString ? `?${queryString}` : ''}`);
       setTools(response.data.tools);
@@ -146,7 +185,7 @@ const ToolsPage = () => {
       }
 
       setImageFile(file);
-      
+
       // Показываем превью
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -177,27 +216,36 @@ const ToolsPage = () => {
   const handleCreateTool = async (e) => {
     e.preventDefault();
     try {
-      let imageUrl = formData.imageUrl;
-      
+      const formDataPayload = new FormData();
+      formDataPayload.append('name', formData.name);
+      formDataPayload.append('serialNumber', formData.serialNumber);
+      if (formData.description) formDataPayload.append('description', formData.description);
+      if (formData.warehouseId) formDataPayload.append('warehouseId', formData.warehouseId);
+      if (formData.price) formDataPayload.append('price', formData.price);
+      if (formData.categoryId) formDataPayload.append('categoryId', formData.categoryId);
+      if (formData.qrCode) formDataPayload.append('qrCode', formData.qrCode);
+
+      // If we have a file, append it
       if (imageFile) {
-        imageUrl = await uploadImage(imageFile);
+        formDataPayload.append('image', imageFile);
+      } else if (formData.imageUrl) {
+        // If user provided a URL string manually (backward compatibility or external URL)
+        formDataPayload.append('imageUrl', formData.imageUrl);
       }
 
-      const payload = {
-        ...formData,
-        imageUrl,
-        price: formData.price ? parseFloat(formData.price) : null,
-        categoryId: formData.categoryId || null
-      };
+      await api.post('/tools', formDataPayload, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
 
-      await api.post('/tools', payload);
       toast({
         title: 'Инструмент создан',
         status: 'success',
         duration: 3000,
         isClosable: true,
       });
-      setFormData({ name: '', serialNumber: '', description: '', imageUrl: '', warehouseId: '', price: '', categoryId: '' });
+      setFormData({ name: '', serialNumber: '', description: '', imageUrl: '', warehouseId: '', price: '', categoryId: '', qrCode: '' });
       setImageFile(null);
       setImagePreview('');
       onClose();
@@ -298,7 +346,7 @@ const ToolsPage = () => {
 
   return (
     <VStack spacing={8} align="stretch">
-      <HStack justify="space-between">
+      <Stack direction={{ base: 'column', md: 'row' }} justify="space-between" align={{ base: 'start', md: 'center' }}>
         <Box>
           <Heading size="lg" mb={2}>
             Все Инструменты
@@ -308,11 +356,11 @@ const ToolsPage = () => {
           </Text>
         </Box>
         {canCreate && (
-          <Button leftIcon={<FiPlus />} colorScheme="blue" onClick={onOpen}>
+          <Button leftIcon={<FiPlus />} colorScheme="blue" onClick={onOpen} w={{ base: 'full', md: 'auto' }}>
             Добавить Инструмент
           </Button>
         )}
-      </HStack>
+      </Stack>
 
       <VStack spacing={4} align="stretch">
         <HStack spacing={4}>
@@ -330,10 +378,10 @@ const ToolsPage = () => {
                     <FiSearch color="gray" />
                   </Box>
                   {searchQuery && (
-                    <Box 
-                      position="absolute" 
-                      right={3} 
-                      top="50%" 
+                    <Box
+                      position="absolute"
+                      right={3}
+                      top="50%"
                       transform="translateY(-50%)"
                       cursor="pointer"
                       onClick={() => setSearchQuery('')}
@@ -365,12 +413,12 @@ const ToolsPage = () => {
           </HStack>
         </HStack>
 
-        <HStack spacing={4}>
+        <Stack direction={{ base: 'column', lg: 'row' }} spacing={4}>
           <Select
             placeholder="Все статусы"
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            maxW="200px"
+            maxW={{ base: 'full', lg: '200px' }}
           >
             <option value="AVAILABLE">На складе</option>
             <option value="IN_USE">В использовании</option>
@@ -380,7 +428,7 @@ const ToolsPage = () => {
             placeholder="Все категории"
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
-            maxW="200px"
+            maxW={{ base: 'full', lg: '200px' }}
           >
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
@@ -393,7 +441,7 @@ const ToolsPage = () => {
             placeholder="Все склады"
             value={filterWarehouse}
             onChange={(e) => setFilterWarehouse(e.target.value)}
-            maxW="200px"
+            maxW={{ base: 'full', lg: '200px' }}
           >
             {warehouses.map((warehouse) => (
               <option key={warehouse.id} value={warehouse.id}>
@@ -416,11 +464,11 @@ const ToolsPage = () => {
               Сбросить фильтры
             </Button>
           )}
-        </HStack>
+        </Stack>
       </VStack>
 
       {viewMode === 'grid' ? (
-        <SimpleGrid columns={{ base: 1, md: 2, lg: 3, xl: 4 }} spacing={6}>
+        <SimpleGrid columns={{ base: 1, md: 2, lg: 3, xl: 3 }} spacing={6}>
           {tools.map((tool) => (
             <ToolCard
               key={tool.id}
@@ -431,6 +479,7 @@ const ToolsPage = () => {
               canUpdate={canUpdate}
               onEdit={canUpdate ? handleEditTool : null}
               currentUserId={user?.id}
+              canManageAll={canManageAll}
             />
           ))}
         </SimpleGrid>
@@ -443,6 +492,7 @@ const ToolsPage = () => {
           canUpdate={canUpdate}
           onEdit={canUpdate ? handleEditTool : null}
           currentUserId={user?.id}
+          canManageAll={canManageAll}
         />
       )}
 
@@ -489,6 +539,42 @@ const ToolsPage = () => {
                     value={formData.serialNumber}
                     onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })}
                   />
+                </FormControl>
+
+                <FormControl>
+                  <FormLabel>QR-код</FormLabel>
+                  <HStack>
+                    <Input
+                      placeholder="Сгенерируется автоматически, если пусто"
+                      value={formData.qrCode}
+                      onChange={(e) => setFormData({ ...formData, qrCode: e.target.value })}
+                    />
+                    <Button onClick={() => setShowQrScanner(!showQrScanner)} colorScheme={showQrScanner ? "red" : "gray"}>
+                      {showQrScanner ? "Закрыть" : "Сканировать"}
+                    </Button>
+                  </HStack>
+                  {showQrScanner && (
+                    <Box mt={2} overflow="hidden" borderRadius="md">
+                      <QrReader
+                        onResult={(result, error) => {
+                          if (!!result) {
+                            handleScan(result?.text);
+                            // Important: Stop scanning immediately to prevent loops
+                            // QrReader might keep firing, so handleScan handles the state update
+                          }
+                          if (!!error) {
+                            // console.info(error);
+                          }
+                        }}
+                        constraints={{ facingMode: 'environment' }}
+                        style={{ width: '100%' }}
+                        scanDelay={500} // Scan delay in ms
+                      />
+                    </Box>
+                  )}
+                  <FormHelperText>
+                    Оставьте пустым для авто-генерации. Или отсканируйте свой.
+                  </FormHelperText>
                 </FormControl>
 
                 <FormControl>

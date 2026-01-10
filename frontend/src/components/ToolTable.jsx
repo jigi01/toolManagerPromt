@@ -61,7 +61,7 @@ const ToolTable = ({ tools, onDelete, onTransfer, onCheckin, canUpdate, onEdit, 
     <>
       <Card>
         <CardBody overflowX="auto">
-          <Table variant="simple">
+          <Table variant="simple" minW="1000px">
             <Thead>
               <Tr>
                 <Th>Инструмент</Th>
@@ -78,7 +78,7 @@ const ToolTable = ({ tools, onDelete, onTransfer, onCheckin, canUpdate, onEdit, 
               {tools.map((tool) => {
                 // Проверяем, может ли текущий пользователь передавать этот инструмент
                 const canTransferThisTool = onTransfer && (
-                  tool.status === 'AVAILABLE' || 
+                  tool.status === 'AVAILABLE' ||
                   tool.currentUserId === currentUserId
                 );
 
@@ -148,7 +148,7 @@ const ToolTable = ({ tools, onDelete, onTransfer, onCheckin, canUpdate, onEdit, 
                         >
                           Детали
                         </Button>
-                        
+
                         {onEdit && (
                           <IconButton
                             icon={<FiEdit2 />}
@@ -159,7 +159,7 @@ const ToolTable = ({ tools, onDelete, onTransfer, onCheckin, canUpdate, onEdit, 
                             aria-label="Редактировать"
                           />
                         )}
-                        
+
                         {canTransferThisTool && (
                           <Button
                             size="sm"
@@ -171,7 +171,7 @@ const ToolTable = ({ tools, onDelete, onTransfer, onCheckin, canUpdate, onEdit, 
                             {tool.status === 'AVAILABLE' ? 'Выдать' : 'Передать'}
                           </Button>
                         )}
-                        
+
                         {canCheckinThisTool && (
                           <Button
                             size="sm"
@@ -183,7 +183,7 @@ const ToolTable = ({ tools, onDelete, onTransfer, onCheckin, canUpdate, onEdit, 
                             На склад
                           </Button>
                         )}
-                        
+
                         {onDelete && (
                           <IconButton
                             icon={<FiTrash2 />}

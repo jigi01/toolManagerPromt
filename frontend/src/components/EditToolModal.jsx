@@ -95,7 +95,7 @@ const EditToolModal = ({ isOpen, onClose, tool, onSuccess }) => {
       }
 
       setImageFile(file);
-      
+
       // Показываем превью
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -128,28 +128,33 @@ const EditToolModal = ({ isOpen, onClose, tool, onSuccess }) => {
     setIsSubmitting(true);
 
     try {
-      let imageUrl = formData.imageUrl;
-      
+      const formDataPayload = new FormData();
+      formDataPayload.append('name', formData.name);
+      formDataPayload.append('serialNumber', formData.serialNumber);
+      if (formData.description) formDataPayload.append('description', formData.description);
+      if (formData.price) formDataPayload.append('price', formData.price);
+      if (formData.categoryId) formDataPayload.append('categoryId', formData.categoryId);
+
+      // Handle image
       if (imageFile) {
-        imageUrl = await uploadImage(imageFile);
+        formDataPayload.append('image', imageFile);
+      } else if (formData.imageUrl) {
+        formDataPayload.append('imageUrl', formData.imageUrl);
       }
 
-      const payload = {
-        ...formData,
-        imageUrl,
-        price: formData.price ? parseFloat(formData.price) : null,
-        categoryId: formData.categoryId || null
-      };
+      await api.put(`/tools/${tool.id}`, formDataPayload, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
 
-      await api.put(`/tools/${tool.id}`, payload);
-      
       toast({
         title: 'Инструмент обновлен',
         status: 'success',
         duration: 3000,
         isClosable: true,
       });
-      
+
       onSuccess();
       onClose();
     } catch (error) {
@@ -265,9 +270,9 @@ const EditToolModal = ({ isOpen, onClose, tool, onSuccess }) => {
                 </Box>
               )}
 
-              <Button 
-                type="submit" 
-                colorScheme="blue" 
+              <Button
+                type="submit"
+                colorScheme="blue"
                 width="100%"
                 isLoading={isSubmitting}
               >

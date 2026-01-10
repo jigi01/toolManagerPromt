@@ -4,9 +4,7 @@ export const createInvitation = async (req, res) => {
   try {
     const { email, roleId } = req.body;
 
-    if (!email) {
-      return res.status(400).json({ error: 'Необходимо указать email.' });
-    }
+
 
     const invitation = await invitationService.createInvitation(
       email,

@@ -164,7 +164,7 @@ const ToolDetailsPage = () => {
                       </VStack>
                     </Center>
                   )}
-                  
+
                   <Box
                     p={4}
                     bg="gray.50"
@@ -300,9 +300,21 @@ const ToolDetailsPage = () => {
                           )}
                         </Td>
                         <Td>
-                          <Text fontSize="sm" color="gray.600">
-                            {record.notes || '—'}
-                          </Text>
+                          <VStack align="start" spacing={0}>
+                            {record.actor && (
+                              <Text fontSize="xs" fontWeight="bold" color="blue.600">
+                                Выполнил: {record.actor.name}
+                              </Text>
+                            )}
+                            {record.notes && (
+                              <Text fontSize="sm" color="gray.600">
+                                {record.notes}
+                              </Text>
+                            )}
+                            {!record.actor && !record.notes && (
+                              <Text fontSize="sm" color="gray.400">—</Text>
+                            )}
+                          </VStack>
                         </Td>
                       </Tr>
                     ))}

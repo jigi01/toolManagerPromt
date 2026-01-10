@@ -22,6 +22,7 @@ const ToolQRCode = ({ tool, size = 100, showLabel = false, showExpandButton = tr
   const toast = useToast();
 
   const getToolUrl = () => {
+    if (tool.qrCode) return tool.qrCode; // Use manual/external QR code if present
     const origin = window.location.origin;
     return `${origin}/tools/${tool.id}`;
   };
@@ -41,7 +42,7 @@ const ToolQRCode = ({ tool, size = 100, showLabel = false, showExpandButton = tr
       ctx.fillStyle = 'white';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0);
-      
+
       canvas.toBlob((blob) => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -49,7 +50,7 @@ const ToolQRCode = ({ tool, size = 100, showLabel = false, showExpandButton = tr
         link.download = `qr-${tool.serialNumber || tool.id}.png`;
         link.click();
         URL.revokeObjectURL(url);
-        
+
         toast({
           title: 'QR-код скачан',
           status: 'success',
@@ -110,7 +111,7 @@ const ToolQRCode = ({ tool, size = 100, showLabel = false, showExpandButton = tr
                   includeMargin={true}
                 />
               </Box>
-              
+
               <VStack spacing={2} align="stretch" w="100%">
                 <Text fontSize="sm" fontWeight="bold">
                   {tool.name}

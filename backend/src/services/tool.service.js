@@ -1,6 +1,12 @@
+import { Prisma } from '@prisma/client';
 import prisma from '../utils/prisma.js';
+import * as storageService from './storage.service.js';
 
-export const createTool = async (name, serialNumber, description, companyId, imageUrl = null, warehouseId = null, price = null, categoryId = null) => {
+export const uploadToolImage = async (file) => {
+  return await storageService.uploadFile(file, 'tools');
+};
+
+export const createTool = async (name, serialNumber, description, companyId, imageUrl = null, warehouseId = null, price = null, categoryId = null, qrCode = null) => {
   const existingTool = await prisma.tool.findUnique({
     where: {
       companyId_serialNumber: {
@@ -20,7 +26,7 @@ export const createTool = async (name, serialNumber, description, companyId, ima
     const defaultWarehouse = await prisma.warehouse.findFirst({
       where: { companyId, isDefault: true }
     });
-    
+
     if (defaultWarehouse) {
       targetWarehouseId = defaultWarehouse.id;
     }
@@ -56,17 +62,31 @@ export const createTool = async (name, serialNumber, description, companyId, ima
     }
   }
 
+  // Try to extract ID from QR code if it looks like our URL
+  let customId = undefined;
+  if (qrCode && qrCode.includes('/tools/')) {
+    const parts = qrCode.split('/tools/');
+    const possibleId = parts[1];
+    // Basic validation for CUID-like length/chars if needed, or just trust it.
+    // CUIDs are usually 25 chars starting with c. But we trust the user.
+    if (possibleId && possibleId.length > 5) {
+      customId = possibleId;
+    }
+  }
+
   const tool = await prisma.tool.create({
     data: {
+      id: customId, // Use the extracted ID if available
       name,
       serialNumber,
       description,
       imageUrl,
-      price,
+      price: price ? new Prisma.Decimal(price) : null,
       categoryId,
       companyId,
       warehouseId: targetWarehouseId,
-      status: 'AVAILABLE'
+      status: 'AVAILABLE',
+      qrCode
     }
   });
 
@@ -231,7 +251,7 @@ export const deleteTool = async (toolId, companyId) => {
 };
 
 // Передача инструмента от одного пользователя другому (или со склада пользователю, или на склад)
-export const transferTool = async (toolId, toUserId, actorId, companyId, toWarehouseId = null) => {
+export const transferTool = async (toolId, toUserId, actor, companyId, toWarehouseId = null) => {
   return await prisma.$transaction(async (tx) => {
     // Получаем инструмент
     const tool = await tx.tool.findUnique({
@@ -246,9 +266,32 @@ export const transferTool = async (toolId, toUserId, actorId, companyId, toWareh
       throw new Error('Этот инструмент не принадлежит вашей компании.');
     }
 
+    // CHECK PERMISSIONS:
+    // If actor is NOT the current holder, they must be Boss or have TOOL_MANAGE_ALL
+    // CHECK PERMISSIONS:
+    const isOwner = tool.currentUserId === actor.id;
+    const isWarehouse = !tool.currentUserId; // or tool.status === 'AVAILABLE'
+    const canManageAll = actor.role?.isBoss || actor.role?.permissions?.includes('TOOL_MANAGE_ALL');
+
+    // 1. User cannot touch tool if it's not theirs, not on warehouse, and they are not Admin
+    if (!isOwner && !isWarehouse && !canManageAll) {
+      throw new Error('Вы можете передавать только те инструменты, которые находятся у вас.');
+    }
+
+    // 2. If taking from Warehouse (and not Admin), can ONLY take to self
+    if (isWarehouse && !canManageAll) {
+      if (toUserId !== actor.id) {
+        throw new Error('Со склада вы можете взять инструмент только себе.');
+      }
+    }
+
     // Должен быть указан либо toUserId, либо toWarehouseId
     if (!toUserId && !toWarehouseId) {
       throw new Error('Необходимо указать получателя или склад назначения.');
+    }
+
+    if (toUserId && toUserId === tool.currentUserId) {
+      throw new Error('Инструмент уже находится у этого пользователя.');
     }
 
     // Нельзя передать и пользователю и на склад одновременно
@@ -326,7 +369,7 @@ export const transferTool = async (toolId, toUserId, actorId, companyId, toWareh
     await tx.toolHistory.create({
       data: {
         toolId,
-        actorId,
+        actorId: actor.id,
         action: 'TRANSFER',
         fromUserId,
         toUserId: toUserId || null,
@@ -340,7 +383,7 @@ export const transferTool = async (toolId, toUserId, actorId, companyId, toWareh
 };
 
 // Возврат инструмента на склад
-export const checkinTool = async (toolId, actorId, companyId, warehouseId = null) => {
+export const checkinTool = async (toolId, actor, companyId, warehouseId = null) => {
   return await prisma.$transaction(async (tx) => {
     // Получаем инструмент
     const tool = await tx.tool.findUnique({
@@ -359,6 +402,15 @@ export const checkinTool = async (toolId, actorId, companyId, warehouseId = null
       throw new Error('Инструмент уже находится на складе.');
     }
 
+    // CHECK PERMISSIONS:
+    // If actor is NOT the current holder, they must be Boss or have TOOL_MANAGE_ALL
+    if (tool.currentUserId !== actor.id) {
+      const hasPermission = actor.role?.isBoss || actor.role?.permissions?.includes('TOOL_MANAGE_ALL');
+      if (!hasPermission) {
+        throw new Error('Вы можете возвращать только те инструменты, которые находятся у вас.');
+      }
+    }
+
     const fromUserId = tool.currentUserId;
 
     // Если склад не указан, используем дефолтный
@@ -367,7 +419,7 @@ export const checkinTool = async (toolId, actorId, companyId, warehouseId = null
       const defaultWarehouse = await tx.warehouse.findFirst({
         where: { companyId, isDefault: true }
       });
-      
+
       if (defaultWarehouse) {
         targetWarehouseId = defaultWarehouse.id;
       }
@@ -413,7 +465,7 @@ export const checkinTool = async (toolId, actorId, companyId, warehouseId = null
     await tx.toolHistory.create({
       data: {
         toolId,
-        actorId,
+        actorId: actor.id,
         action: 'CHECK_IN',
         fromUserId,
         toUserId: null,

@@ -18,12 +18,12 @@ const PermissionRoute = ({ children, permission, anyOf }) => {
     );
   }
 
-  const allowed = anyOf 
+  const allowed = anyOf
     ? hasAnyPermission(anyOf)
     : hasPermission(permission);
 
   if (!allowed) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <Box>{children}</Box>;

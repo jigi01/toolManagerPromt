@@ -3,29 +3,37 @@ import prisma from '../utils/prisma.js';
 
 export const createInvitation = async (email, companyId, roleId = null, expiresInDays = 7) => {
   // Проверяем, что пользователь с таким email еще не существует
-  const existingUser = await prisma.user.findUnique({
-    where: { email }
-  });
+  // Проверяем, что пользователь с таким email еще не существует (только если email указан)
+  if (email) {
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    });
 
-  if (existingUser) {
-    throw new Error('Пользователь с таким email уже зарегистрирован.');
+    if (existingUser) {
+      throw new Error('Пользователь с таким email уже зарегистрирован.');
+    }
   }
 
   // Проверяем, нет ли неиспользованного приглашения для этого email
-  const existingInvitation = await prisma.invitation.findFirst({
-    where: {
-      email,
-      companyId,
-      usedAt: null,
-      expiresAt: {
-        gt: new Date()
+  // Проверяем, нет ли неиспользованного приглашения для этого email (если он указан)
+  if (email) {
+    const existingInvitation = await prisma.invitation.findFirst({
+      where: {
+        email,
+        companyId,
+        usedAt: null,
+        expiresAt: {
+          gt: new Date()
+        }
       }
-    }
-  });
+    });
 
-  if (existingInvitation) {
-    return existingInvitation;
+    if (existingInvitation) {
+      return existingInvitation;
+    }
   }
+
+
 
   // Если указана роль, проверяем, что она принадлежит компании
   if (roleId) {

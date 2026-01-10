@@ -8,7 +8,17 @@ export const createTool = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { name, serialNumber, description, imageUrl, warehouseId, price, categoryId } = req.body;
+    const { name, serialNumber, description, warehouseId, price, categoryId } = req.body;
+    let { imageUrl } = req.body; // Backward compatibility if URL is sent as string
+
+    if (req.file) {
+      try {
+        imageUrl = await toolService.uploadToolImage(req.file);
+      } catch (uploadError) {
+        return res.status(500).json({ error: 'Ошибка загрузки изображения: ' + uploadError.message });
+      }
+    }
+
     const tool = await toolService.createTool(
       name,
       serialNumber,
@@ -17,7 +27,8 @@ export const createTool = async (req, res) => {
       imageUrl,
       warehouseId,
       price,
-      categoryId
+      categoryId,
+      req.body.qrCode // Pass qrCode to service
     );
 
     res.status(201).json({ tool });
@@ -39,8 +50,8 @@ export const getTools = async (req, res) => {
 
 export const getMyTools = async (req, res) => {
   try {
-    const tools = await toolService.getAllTools(req.user.companyId, { 
-      currentUserId: req.user.id 
+    const tools = await toolService.getAllTools(req.user.companyId, {
+      currentUserId: req.user.id
     });
 
     res.json({ tools });
@@ -64,6 +75,15 @@ export const updateTool = async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
+
+    if (req.file) {
+      try {
+        const imageUrl = await toolService.uploadToolImage(req.file);
+        updates.imageUrl = imageUrl;
+      } catch (uploadError) {
+        return res.status(500).json({ error: 'Ошибка загрузки изображения: ' + uploadError.message });
+      }
+    }
 
     const tool = await toolService.updateTool(id, req.user.companyId, updates);
     res.json({ tool });
@@ -95,7 +115,7 @@ export const transferTool = async (req, res) => {
     const tool = await toolService.transferTool(
       id,
       toUserId,
-      req.user.id,
+      req.user, // Pass full user object for permission checks
       req.user.companyId,
       toWarehouseId
     );
@@ -113,7 +133,7 @@ export const checkinTool = async (req, res) => {
 
     const tool = await toolService.checkinTool(
       id,
-      req.user.id,
+      req.user, // Pass full user object
       req.user.companyId,
       warehouseId || null
     );

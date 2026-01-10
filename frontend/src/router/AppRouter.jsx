@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
 import Layout from '../components/Layout';
 import ProtectedRoute from '../components/ProtectedRoute';
 import AdminRoute from '../components/AdminRoute';
@@ -6,6 +7,7 @@ import BossRoute from '../components/BossRoute';
 import PermissionRoute from '../components/PermissionRoute';
 import LoginPage from '../pages/LoginPage';
 import RegisterPage from '../pages/RegisterPage';
+import CompleteRegistrationPage from '../pages/CompleteRegistrationPage';
 import DashboardAdmin from '../pages/DashboardAdmin';
 import DashboardEmployee from '../pages/DashboardEmployee';
 import ToolsPage from '../pages/ToolsPage';
@@ -14,6 +16,8 @@ import UsersPage from '../pages/UsersPage';
 import RolesPage from '../pages/RolesPage';
 import WarehousesPage from '../pages/WarehousesPage';
 import SettingsPage from '../pages/SettingsPage';
+import LandingPage from '../pages/LandingPage';
+import PageTransition from '../components/PageTransition';
 import useAuthStore from '../store/authStore';
 
 const HomePage = () => {
@@ -22,18 +26,24 @@ const HomePage = () => {
 };
 
 const AppRouter = () => {
+  const location = useLocation();
+
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<PageTransition><LandingPage /></PageTransition>} />
+        <Route path="/login" element={<PageTransition><LoginPage /></PageTransition>} />
+        <Route path="/register" element={<PageTransition><RegisterPage /></PageTransition>} />
+        <Route path="/complete-registration" element={<PageTransition><CompleteRegistrationPage /></PageTransition>} />
 
         <Route
-          path="/"
+          path="/dashboard"
           element={
             <ProtectedRoute>
               <Layout>
-                <HomePage />
+                <PageTransition>
+                  <HomePage />
+                </PageTransition>
               </Layout>
             </ProtectedRoute>
           }
@@ -45,7 +55,9 @@ const AppRouter = () => {
             <ProtectedRoute>
               <PermissionRoute permission="TOOL_READ">
                 <Layout>
-                  <ToolsPage />
+                  <PageTransition>
+                    <ToolsPage />
+                  </PageTransition>
                 </Layout>
               </PermissionRoute>
             </ProtectedRoute>
@@ -57,7 +69,9 @@ const AppRouter = () => {
           element={
             <ProtectedRoute>
               <Layout>
-                <ToolDetailsPage />
+                <PageTransition>
+                  <ToolDetailsPage />
+                </PageTransition>
               </Layout>
             </ProtectedRoute>
           }
@@ -69,7 +83,9 @@ const AppRouter = () => {
             <ProtectedRoute>
               <PermissionRoute permission="USER_READ">
                 <Layout>
-                  <UsersPage />
+                  <PageTransition>
+                    <UsersPage />
+                  </PageTransition>
                 </Layout>
               </PermissionRoute>
             </ProtectedRoute>
@@ -82,7 +98,9 @@ const AppRouter = () => {
             <ProtectedRoute>
               <BossRoute>
                 <Layout>
-                  <RolesPage />
+                  <PageTransition>
+                    <RolesPage />
+                  </PageTransition>
                 </Layout>
               </BossRoute>
             </ProtectedRoute>
@@ -95,7 +113,9 @@ const AppRouter = () => {
             <ProtectedRoute>
               <PermissionRoute permission="WAREHOUSE_READ">
                 <Layout>
-                  <WarehousesPage />
+                  <PageTransition>
+                    <WarehousesPage />
+                  </PageTransition>
                 </Layout>
               </PermissionRoute>
             </ProtectedRoute>
@@ -107,7 +127,9 @@ const AppRouter = () => {
           element={
             <ProtectedRoute>
               <Layout>
-                <SettingsPage />
+                <PageTransition>
+                  <SettingsPage />
+                </PageTransition>
               </Layout>
             </ProtectedRoute>
           }
@@ -115,7 +137,7 @@ const AppRouter = () => {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </BrowserRouter>
+    </AnimatePresence>
   );
 };
 

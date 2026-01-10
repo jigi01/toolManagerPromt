@@ -73,7 +73,8 @@ const PERMISSIONS_BY_CATEGORY = [
     description: 'Передача и прием инструментов',
     permissions: [
       { value: 'TOOL_TRANSFER', label: 'Передача инструментов другим сотрудникам' },
-      { value: 'TOOL_CHECKIN', label: 'Возврат инструментов на склад' }
+      { value: 'TOOL_CHECKIN', label: 'Возврат инструментов на склад' },
+      { value: 'TOOL_MANAGE_ALL', label: 'Управление любыми инструментами (принудительная передача/возврат)' }
     ]
   },
   {
@@ -195,7 +196,7 @@ const RolesPage = () => {
   };
 
   const togglePermission = (permission) => {
-    setSelectedPermissions(prev => 
+    setSelectedPermissions(prev =>
       prev.includes(permission)
         ? prev.filter(p => p !== permission)
         : [...prev, permission]
@@ -205,10 +206,10 @@ const RolesPage = () => {
   const toggleCategoryPermissions = (group) => {
     const groupPermissions = group.permissions.map(p => p.value);
     const allSelected = groupPermissions.every(p => selectedPermissions.includes(p));
-    
+
     if (allSelected) {
       // Снять все права категории
-      setSelectedPermissions(prev => 
+      setSelectedPermissions(prev =>
         prev.filter(p => !groupPermissions.includes(p))
       );
     } else {
@@ -235,15 +236,15 @@ const RolesPage = () => {
   return (
     <Container maxW="container.xl" py={8}>
       <VStack spacing={6} align="stretch">
-        <HStack justify="space-between">
+        <Stack direction={{ base: 'column', md: 'row' }} justify="space-between" align={{ base: 'start', md: 'center' }}>
           <Heading size="lg">Управление ролями</Heading>
-          <Button leftIcon={<FiPlus />} colorScheme="blue" onClick={handleOpenCreate}>
+          <Button leftIcon={<FiPlus />} colorScheme="blue" onClick={handleOpenCreate} w={{ base: 'full', md: 'auto' }}>
             Создать роль
           </Button>
-        </HStack>
+        </Stack>
 
         <Box overflowX="auto">
-          <Table variant="simple">
+          <Table variant="simple" minW="700px">
             <Thead>
               <Tr>
                 <Th>Название</Th>

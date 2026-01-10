@@ -19,7 +19,7 @@ import {
 } from '@chakra-ui/react';
 import api from '../services/api';
 
-const TransferModal = ({ isOpen, onClose, tool, onSuccess }) => {
+const TransferModal = ({ isOpen, onClose, tool, onSuccess, currentUserId, canManageAll }) => {
   const [users, setUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState('');
   const [loading, setLoading] = useState(true);
@@ -35,7 +35,32 @@ const TransferModal = ({ isOpen, onClose, tool, onSuccess }) => {
   const fetchUsers = async () => {
     try {
       const response = await api.get('/users');
-      setUsers(response.data.users);
+      let availableUsers = response.data.users;
+
+      // Logic:
+      // 1. If tool is on warehouse (!tool.currentUserId) AND user cannot manage all:
+      //    User can only take to THEMSELVES.
+      // 2. Otherwise (Owner transferring or Admin managing):
+      //    User can transfer to anyone EXCEPT the current owner (already handled).
+
+      if (!tool.currentUserId && !canManageAll && currentUserId) {
+        // Restricted mode: Only show current user
+        availableUsers = availableUsers.filter(u => u.id === currentUserId);
+      } else {
+        // Normal mode: Filter out current owner (if any)
+        if (tool.currentUserId) {
+          availableUsers = availableUsers.filter(u => u.id !== tool.currentUserId);
+        }
+        // If generic transfer/admin, we might want to allow anyone?
+        // But we shouldn't transfer to who already has it (handled by if above).
+      }
+
+      setUsers(availableUsers);
+
+      // Auto-select if only 1 option (UX improvement)
+      if (availableUsers.length === 1) {
+        setSelectedUserId(availableUsers[0].id);
+      }
     } catch (error) {
       toast({
         title: 'Ошибка загрузки пользователей',
@@ -114,8 +139,8 @@ const TransferModal = ({ isOpen, onClose, tool, onSuccess }) => {
           <Button variant="ghost" mr={3} onClick={handleClose}>
             Отмена
           </Button>
-          <Button 
-            colorScheme="blue" 
+          <Button
+            colorScheme="blue"
             onClick={handleSubmit}
             isLoading={submitting}
             isDisabled={loading || !selectedUserId}

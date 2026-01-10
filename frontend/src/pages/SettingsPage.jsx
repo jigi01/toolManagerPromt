@@ -35,7 +35,8 @@ import {
   Card,
   CardBody,
   Spinner,
-  Center
+  Center,
+  Stack
 } from '@chakra-ui/react';
 import { FiPlus, FiEdit2, FiTrash2, FiTag } from 'react-icons/fi';
 import api from '../services/api';
@@ -185,7 +186,7 @@ const SettingsPage = () => {
           <TabPanels>
             <TabPanel px={0}>
               <VStack spacing={6} align="stretch">
-                <HStack justify="space-between">
+                <Stack direction={{ base: 'column', md: 'row' }} justify="space-between" align={{ base: 'start', md: 'center' }}>
                   <Box>
                     <Heading size="md">Категории инструментов</Heading>
                     <Text fontSize="sm" color="gray.600" mt={1}>
@@ -193,11 +194,11 @@ const SettingsPage = () => {
                     </Text>
                   </Box>
                   {canCreate && (
-                    <Button leftIcon={<FiPlus />} colorScheme="blue" onClick={handleOpenCreate}>
+                    <Button leftIcon={<FiPlus />} colorScheme="blue" onClick={handleOpenCreate} w={{ base: 'full', md: 'auto' }}>
                       Добавить категорию
                     </Button>
                   )}
-                </HStack>
+                </Stack>
 
                 {loading ? (
                   <Center py={10}>

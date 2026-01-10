@@ -42,7 +42,8 @@ import {
   TabPanel,
   IconButton,
   Tooltip,
-  Code
+  Code,
+  Stack
 } from '@chakra-ui/react';
 import { FiMoreVertical, FiUserPlus, FiMail, FiTrash2, FiCopy } from 'react-icons/fi';
 import api from '../services/api';
@@ -115,14 +116,14 @@ const UsersPage = () => {
     e.preventDefault();
     try {
       const response = await api.post('/invitations', {
-        email: inviteEmail,
+        email: inviteEmail || null,
         roleId: inviteRoleId || null
       });
-      
+
       const inviteLink = `${window.location.origin}/register?invite=${response.data.invitation.token}`;
-      
+
       toast({
-        title: 'Приглашение создано',
+        title: 'Ссылка создана',
         description: 'Ссылка скопирована в буфер обмена',
         status: 'success',
         duration: 3000,
@@ -130,7 +131,7 @@ const UsersPage = () => {
       });
 
       navigator.clipboard.writeText(inviteLink);
-      
+
       setInviteEmail('');
       setInviteRoleId('');
       onClose();
@@ -249,21 +250,21 @@ const UsersPage = () => {
 
   return (
     <VStack spacing={8} align="stretch">
-      <HStack justify="space-between">
+      <Stack direction={{ base: 'column', md: 'row' }} justify="space-between" align={{ base: 'start', md: 'center' }}>
         <Box>
           <Heading size="lg" mb={2}>
             Управление Сотрудниками
           </Heading>
           <Text color="gray.600">
-            Список всех пользователей компании
+            Список всех пользователей компании {currentUser?.company?.name ? `"${currentUser.company.name}"` : ''}
           </Text>
         </Box>
         {canInvite && (
-          <Button leftIcon={<FiUserPlus />} colorScheme="blue" onClick={onOpen}>
+          <Button leftIcon={<FiUserPlus />} colorScheme="blue" onClick={onOpen} w={{ base: 'full', md: 'auto' }}>
             Пригласить сотрудника
           </Button>
         )}
-      </HStack>
+      </Stack>
 
       <Tabs>
         <TabList>
@@ -274,8 +275,8 @@ const UsersPage = () => {
         <TabPanels>
           <TabPanel px={0}>
             <Card>
-              <CardBody>
-                <Table variant="simple">
+              <CardBody overflowX="auto">
+                <Table variant="simple" minW="800px">
                   <Thead>
                     <Tr>
                       <Th>Пользователь</Th>
@@ -344,8 +345,8 @@ const UsersPage = () => {
           {canInvite && (
             <TabPanel px={0}>
               <Card>
-                <CardBody>
-                  <Table variant="simple">
+                <CardBody overflowX="auto">
+                  <Table variant="simple" minW="800px">
                     <Thead>
                       <Tr>
                         <Th>Email</Th>
@@ -358,7 +359,7 @@ const UsersPage = () => {
                     <Tbody>
                       {invitations.map((invitation) => (
                         <Tr key={invitation.id}>
-                          <Td>{invitation.email}</Td>
+                          <Td>{invitation.email || 'Ссылка'}</Td>
                           <Td>
                             {invitation.role?.name || 'Без роли'}
                           </Td>
@@ -410,35 +411,13 @@ const UsersPage = () => {
           <ModalBody>
             <form onSubmit={handleCreateInvitation}>
               <VStack spacing={4}>
-                <FormControl isRequired>
-                  <FormLabel>Email</FormLabel>
-                  <Input
-                    type="email"
-                    placeholder="email@example.com"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                  />
-                </FormControl>
-
-                {roles.length > 0 && (
-                  <FormControl>
-                    <FormLabel>Роль (опционально)</FormLabel>
-                    <Select
-                      placeholder="Без роли"
-                      value={inviteRoleId}
-                      onChange={(e) => setInviteRoleId(e.target.value)}
-                    >
-                      {roles.filter(r => !r.isBoss).map((role) => (
-                        <option key={role.id} value={role.id}>
-                          {role.name}
-                        </option>
-                      ))}
-                    </Select>
-                  </FormControl>
-                )}
+                <Text color="gray.600">
+                  Нажмите кнопку ниже, чтобы сгенерировать уникальную ссылку-приглашение.
+                  Вы сможете отправить её сотруднику через любой мессенджер.
+                </Text>
 
                 <Button type="submit" colorScheme="blue" width="100%">
-                  Создать приглашение
+                  Сгенерировать ссылку
                 </Button>
               </VStack>
             </form>

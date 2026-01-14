@@ -16,7 +16,8 @@ import {
   MenuButton,
   MenuList,
   MenuItem,
-  Box
+  Box,
+  Checkbox
 } from '@chakra-ui/react';
 import { FiMoreVertical, FiTrash2, FiSend, FiPackage, FiEye, FiEdit2 } from 'react-icons/fi';
 import { Link as RouterLink } from 'react-router-dom';
@@ -24,7 +25,19 @@ import TransferModal from './TransferModal';
 import CheckinModal from './CheckinModal';
 import ToolQRCode from './ToolQRCode';
 
-const ToolCard = ({ tool, onDelete, onTransfer, onCheckin, canUpdate, onEdit, currentUserId, canManageAll }) => {
+const ToolCard = ({
+  tool,
+  onDelete,
+  onTransfer,
+  onCheckin,
+  canUpdate,
+  onEdit,
+  currentUserId,
+  canManageAll,
+  selectable,
+  isSelected,
+  onSelect
+}) => {
   const { isOpen: isTransferOpen, onOpen: onTransferOpen, onClose: onTransferClose } = useDisclosure();
   const { isOpen: isCheckinOpen, onOpen: onCheckinOpen, onClose: onCheckinClose } = useDisclosure();
   const [selectedTool, setSelectedTool] = useState(null);
@@ -82,7 +95,19 @@ const ToolCard = ({ tool, onDelete, onTransfer, onCheckin, canUpdate, onEdit, cu
         transition="all 0.2s"
         width="360px"
         maxWidth="360px"
+        position="relative"
       >
+        {selectable && (
+          <Box position="absolute" top={2} left={2} zIndex={10}>
+            <Checkbox
+              isChecked={isSelected}
+              onChange={(e) => onSelect && onSelect(tool.id, e.target.checked)}
+              size="lg"
+              bg="white"
+              sx={{ '& .chakra-checkbox__control': { borderRadius: 'md' } }}
+            />
+          </Box>
+        )}
         <Image
           src={tool.imageUrl || placeholderImage}
           alt={tool.name}

@@ -143,3 +143,50 @@ export const checkinTool = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+
+export const transferToolsBulk = async (req, res) => {
+  try {
+    const { toolIds, toUserId, toWarehouseId } = req.body;
+
+    if (!Array.isArray(toolIds) || toolIds.length === 0) {
+      return res.status(400).json({ error: 'Необходимо указать список ID инструментов.' });
+    }
+
+    if (!toUserId && !toWarehouseId) {
+      return res.status(400).json({ error: 'Необходимо указать ID получателя или ID склада.' });
+    }
+
+    const tools = await toolService.transferToolsBulk(
+      toolIds,
+      toUserId,
+      req.user,
+      req.user.companyId,
+      toWarehouseId
+    );
+
+    res.json({ tools });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const checkinToolsBulk = async (req, res) => {
+  try {
+    const { toolIds, warehouseId } = req.body;
+
+    if (!Array.isArray(toolIds) || toolIds.length === 0) {
+      return res.status(400).json({ error: 'Необходимо указать список ID инструментов.' });
+    }
+
+    const tools = await toolService.checkinToolsBulk(
+      toolIds,
+      req.user,
+      req.user.companyId,
+      warehouseId || null
+    );
+
+    res.json({ tools });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};

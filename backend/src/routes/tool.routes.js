@@ -25,6 +25,9 @@ router.put('/:id', protect, requirePermission('TOOL_UPDATE'), upload.single('ima
 router.delete('/:id', protect, requirePermission('TOOL_DELETE'), toolController.deleteTool);
 
 // Новые эндпоинты для передачи и приема
+router.post('/bulk-transfer', protect, requirePermission('TOOL_TRANSFER'), toolController.transferToolsBulk);
+router.post('/bulk-checkin', protect, requirePermission('TOOL_CHECKIN'), toolController.checkinToolsBulk);
+
 router.post('/:id/transfer', protect, requirePermission('TOOL_TRANSFER'), toolController.transferTool);
 router.post('/:id/checkin', protect, requirePermission('TOOL_CHECKIN'), toolController.checkinTool);
 

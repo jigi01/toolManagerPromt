@@ -34,6 +34,8 @@ import useAuthStore from '../store/authStore';
 import ToolCard from '../components/ToolCard';
 import ToolTable from '../components/ToolTable';
 import EditToolModal from '../components/EditToolModal';
+import TransferModal from '../components/TransferModal';
+import CheckinModal from '../components/CheckinModal';
 import { compressImage } from '../utils/imageCompression';
 import { QrReader } from 'react-qr-reader';
 
@@ -65,6 +67,12 @@ const ToolsPage = () => {
   const toast = useToast();
   const { user, hasPermission } = useAuthStore();
   const [showQrScanner, setShowQrScanner] = useState(false);
+
+  // Bulk Selection State
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedToolIds, setSelectedToolIds] = useState(new Set());
+  const { isOpen: isBulkTransferOpen, onOpen: onBulkTransferOpen, onClose: onBulkTransferClose } = useDisclosure();
+  const { isOpen: isBulkCheckinOpen, onOpen: onBulkCheckinOpen, onClose: onBulkCheckinClose } = useDisclosure();
 
   // Import dynamically or assume it's installed. Using QrReader from react-qr-reader.
   // Note: We need a way to scan.
@@ -336,6 +344,76 @@ const ToolsPage = () => {
     onEditClose();
   };
 
+  // Bulk Handlers
+  const toggleSelectionMode = () => {
+    setIsSelectionMode(!isSelectionMode);
+    setSelectedToolIds(new Set()); // Clear selection when toggling
+  };
+
+  const handleSelectTool = (toolId, isSelected) => {
+    const newSelected = new Set(selectedToolIds);
+    if (isSelected) {
+      newSelected.add(toolId);
+    } else {
+      newSelected.delete(toolId);
+    }
+    setSelectedToolIds(newSelected);
+  };
+
+  const handleBulkTransferSuccess = async (toUserId) => {
+    try {
+      await api.post('/tools/bulk-transfer', {
+        toolIds: Array.from(selectedToolIds),
+        toUserId
+      });
+      toast({
+        title: 'Инструменты переданы',
+        status: 'success',
+        duration: 3000,
+        isClosable: true
+      });
+      setSelectedToolIds(new Set());
+      setIsSelectionMode(false);
+      fetchTools();
+      onBulkTransferClose();
+    } catch (error) {
+      toast({
+        title: 'Ошибка массовой передачи',
+        description: error.response?.data?.error || 'Не удалось передать инструменты',
+        status: 'error',
+        duration: 3000,
+        isClosable: true
+      });
+    }
+  };
+
+  const handleBulkCheckinSuccess = async (warehouseId) => {
+    try {
+      await api.post('/tools/bulk-checkin', {
+        toolIds: Array.from(selectedToolIds),
+        warehouseId
+      });
+      toast({
+        title: 'Инструменты возвращены на склад',
+        status: 'success',
+        duration: 3000,
+        isClosable: true
+      });
+      setSelectedToolIds(new Set());
+      setIsSelectionMode(false);
+      fetchTools();
+      onBulkCheckinClose();
+    } catch (error) {
+      toast({
+        title: 'Ошибка массового возврата',
+        description: error.response?.data?.error || 'Не удалось вернуть инструменты',
+        status: 'error',
+        duration: 3000,
+        isClosable: true
+      });
+    }
+  };
+
   if (loading) {
     return (
       <Center h="50vh">
@@ -355,11 +433,20 @@ const ToolsPage = () => {
             Управление инвентарем компании
           </Text>
         </Box>
-        {canCreate && (
-          <Button leftIcon={<FiPlus />} colorScheme="blue" onClick={onOpen} w={{ base: 'full', md: 'auto' }}>
-            Добавить Инструмент
+        <HStack>
+          <Button
+            onClick={toggleSelectionMode}
+            variant={isSelectionMode ? "solid" : "outline"}
+            colorScheme={isSelectionMode ? "blue" : "gray"}
+          >
+            {isSelectionMode ? "Отмена выбора" : "Выбрать..."}
           </Button>
-        )}
+          {canCreate && (
+            <Button leftIcon={<FiPlus />} colorScheme="blue" onClick={onOpen} w={{ base: 'full', md: 'auto' }}>
+              Добавить Инструмент
+            </Button>
+          )}
+        </HStack>
       </Stack>
 
       <VStack spacing={4} align="stretch">
@@ -480,6 +567,9 @@ const ToolsPage = () => {
               onEdit={canUpdate ? handleEditTool : null}
               currentUserId={user?.id}
               canManageAll={canManageAll}
+              selectable={isSelectionMode}
+              isSelected={selectedToolIds.has(tool.id)}
+              onSelect={handleSelectTool}
             />
           ))}
         </SimpleGrid>
@@ -682,7 +772,61 @@ const ToolsPage = () => {
           onSuccess={handleEditSuccess}
         />
       )}
-    </VStack>
+
+      {/* Bulk Action Bar */}
+      {
+        isSelectionMode && selectedToolIds.size > 0 && (
+          <Box
+            position="fixed"
+            bottom="20px"
+            left="50%"
+            transform="translateX(-50%)"
+            bg="white"
+            p={4}
+            borderRadius="lg"
+            shadow="2xl"
+            zIndex={100}
+            border="1px solid"
+            borderColor="gray.200"
+          >
+            <HStack spacing={4}>
+              <Text fontWeight="bold">{selectedToolIds.size} выбрано</Text>
+              {canTransfer && (
+                <Button colorScheme="blue" size="sm" onClick={onBulkTransferOpen}>
+                  Передать
+                </Button>
+              )}
+              {canCheckin && (
+                <Button colorScheme="green" size="sm" onClick={onBulkCheckinOpen}>
+                  На склад
+                </Button>
+              )}
+              <Button size="sm" onClick={() => setSelectedToolIds(new Set())}>
+                Сброс
+              </Button>
+            </HStack>
+          </Box>
+        )
+      }
+
+      <TransferModal
+        isOpen={isBulkTransferOpen}
+        onClose={onBulkTransferClose}
+        tool={null} // null for bulk
+        selectedCount={selectedToolIds.size}
+        onSuccess={handleBulkTransferSuccess}
+        currentUserId={user?.id}
+        canManageAll={canManageAll}
+      />
+
+      <CheckinModal
+        isOpen={isBulkCheckinOpen}
+        onClose={onBulkCheckinClose}
+        tool={null} // null for bulk
+        selectedCount={selectedToolIds.size}
+        onSuccess={handleBulkCheckinSuccess}
+      />
+    </VStack >
   );
 };
 

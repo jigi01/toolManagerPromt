@@ -477,3 +477,158 @@ export const checkinTool = async (toolId, actor, companyId, warehouseId = null) 
     return updatedTool;
   });
 };
+// Bulk Transfer
+export const transferToolsBulk = async (toolIds, toUserId, actor, companyId, toWarehouseId = null) => {
+  return await prisma.$transaction(async (tx) => {
+    const results = [];
+
+    // Validate target user/warehouse once if possible, but let's just reuse logic or do it inside loop
+    // Ideally we fetch all tools first
+    const tools = await tx.tool.findMany({
+      where: {
+        id: { in: toolIds },
+        companyId: companyId
+      }
+    });
+
+    if (tools.length !== toolIds.length) {
+      throw new Error('Некоторые инструменты не найдены или не принадлежат вашей компании.');
+    }
+
+    // Common validations can go here
+
+    for (const tool of tools) {
+      // Reuse the logic from transferTool but we need to adapt it to run inside this transaction `tx`
+      // Since transferTool creates its own transaction, we shouldn't call it directly if we want atomic bulk op.
+      // We will duplicate the core logic or refactor. Refectoring is risky for breaking changes. 
+      // I'll inline the logic for bulk to use `tx`
+
+      const isOwner = tool.currentUserId === actor.id;
+      const isWarehouse = !tool.currentUserId;
+      const canManageAll = actor.role?.isBoss || actor.role?.permissions?.includes('TOOL_MANAGE_ALL');
+
+      if (!isOwner && !isWarehouse && !canManageAll) {
+        throw new Error(`У вас нет прав на передачу инструмента ${tool.name} (${tool.serialNumber})`);
+      }
+
+      if (isWarehouse && !canManageAll) {
+        if (toUserId !== actor.id) {
+          throw new Error(`Со склада вы можете взять инструмент только себе (${tool.name})`);
+        }
+      }
+
+      const fromUserId = tool.currentUserId;
+      const fromWarehouseId = tool.warehouseId;
+      let updatedData = {};
+
+      if (toUserId) {
+        // We can optimize this by checking user once outside loop, but this is safer
+        const toUser = await tx.user.findUnique({ where: { id: toUserId } });
+        if (!toUser || toUser.companyId !== companyId) throw new Error('Целевой пользователь не найден.');
+
+        updatedData = { currentUserId: toUserId, warehouseId: null, status: 'IN_USE' };
+      }
+
+      if (toWarehouseId) {
+        const toWarehouse = await tx.warehouse.findUnique({ where: { id: toWarehouseId } });
+        if (!toWarehouse || toWarehouse.companyId !== companyId) throw new Error('Целевой склад не найден.');
+
+        updatedData = { currentUserId: null, warehouseId: toWarehouseId, status: 'AVAILABLE' };
+      }
+
+      const updatedTool = await tx.tool.update({
+        where: { id: tool.id },
+        data: updatedData
+      });
+
+      await tx.toolHistory.create({
+        data: {
+          toolId: tool.id,
+          actorId: actor.id,
+          action: 'TRANSFER',
+          fromUserId,
+          toUserId: toUserId || null,
+          fromWarehouseId,
+          toWarehouseId: toWarehouseId || null
+        }
+      });
+
+      results.push(updatedTool);
+    }
+
+    return results;
+  });
+};
+
+// Bulk Check-in
+export const checkinToolsBulk = async (toolIds, actor, companyId, warehouseId = null) => {
+  return await prisma.$transaction(async (tx) => {
+    const tools = await tx.tool.findMany({
+      where: {
+        id: { in: toolIds },
+        companyId: companyId
+      }
+    });
+
+    if (tools.length !== toolIds.length) {
+      throw new Error('Некоторые инструменты не найдены.');
+    }
+
+    let targetWarehouseId = warehouseId;
+    // Resolve default warehouse once if not provided
+    if (!targetWarehouseId) {
+      const defaultWarehouse = await tx.warehouse.findFirst({
+        where: { companyId, isDefault: true }
+      });
+      if (defaultWarehouse) targetWarehouseId = defaultWarehouse.id;
+    }
+
+    // Validate warehouse once
+    if (targetWarehouseId) {
+      const wh = await tx.warehouse.findUnique({ where: { id: targetWarehouseId } });
+      if (!wh || wh.companyId !== companyId) throw new Error('Склад не найден.');
+    }
+
+    const results = [];
+
+    for (const tool of tools) {
+      if (!tool.currentUserId) {
+        // Skip already passed tools? Or throw? checkin is usually "return to warehouse"
+        // If already in warehouse, technically safe to ignore or throw. Let's throw to be strict.
+        throw new Error(`Инструмент ${tool.name} уже на складе.`);
+      }
+
+      if (tool.currentUserId !== actor.id) {
+        const hasPermission = actor.role?.isBoss || actor.role?.permissions?.includes('TOOL_MANAGE_ALL');
+        if (!hasPermission) throw new Error(`Вы не можете вернуть инструмент ${tool.name}, так как он не у вас.`);
+      }
+
+      const fromUserId = tool.currentUserId;
+
+      const updatedTool = await tx.tool.update({
+        where: { id: tool.id },
+        data: {
+          currentUserId: null,
+          warehouseId: targetWarehouseId,
+          status: 'AVAILABLE'
+        }
+      });
+
+      await tx.toolHistory.create({
+        data: {
+          toolId: tool.id,
+          actorId: actor.id,
+          action: 'CHECK_IN',
+          fromUserId,
+          toUserId: null,
+          fromWarehouseId: null,
+          toWarehouseId: targetWarehouseId
+        }
+      });
+
+      results.push(updatedTool);
+    }
+
+    return results;
+  });
+};

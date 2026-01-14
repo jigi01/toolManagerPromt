@@ -19,7 +19,7 @@ import {
 } from '@chakra-ui/react';
 import api from '../services/api';
 
-const TransferModal = ({ isOpen, onClose, tool, onSuccess, currentUserId, canManageAll }) => {
+const TransferModal = ({ isOpen, onClose, tool, onSuccess, currentUserId, canManageAll, selectedCount }) => {
   const [users, setUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState('');
   const [loading, setLoading] = useState(true);
@@ -38,26 +38,24 @@ const TransferModal = ({ isOpen, onClose, tool, onSuccess, currentUserId, canMan
       let availableUsers = response.data.users;
 
       // Logic:
-      // 1. If tool is on warehouse (!tool.currentUserId) AND user cannot manage all:
-      //    User can only take to THEMSELVES.
-      // 2. Otherwise (Owner transferring or Admin managing):
-      //    User can transfer to anyone EXCEPT the current owner (already handled).
-
-      if (!tool.currentUserId && !canManageAll && currentUserId) {
-        // Restricted mode: Only show current user
-        availableUsers = availableUsers.filter(u => u.id === currentUserId);
-      } else {
-        // Normal mode: Filter out current owner (if any)
-        if (tool.currentUserId) {
-          availableUsers = availableUsers.filter(u => u.id !== tool.currentUserId);
+      // If single tool mode (tool is present) apply specific filters
+      if (tool) {
+        if (!tool.currentUserId && !canManageAll && currentUserId) {
+          // Restricted mode: Only show current user (taking from warehouse to self)
+          availableUsers = availableUsers.filter(u => u.id === currentUserId);
+        } else {
+          // Normal mode: Filter out current owner
+          if (tool.currentUserId) {
+            availableUsers = availableUsers.filter(u => u.id !== tool.currentUserId);
+          }
         }
-        // If generic transfer/admin, we might want to allow anyone?
-        // But we shouldn't transfer to who already has it (handled by if above).
       }
+      // If bulk mode (tool is null, selectedCount > 0), generally allow all users
+      // (The backend will validate individual permissions/ownership)
 
       setUsers(availableUsers);
 
-      // Auto-select if only 1 option (UX improvement)
+      // Auto-select if only 1 option
       if (availableUsers.length === 1) {
         setSelectedUserId(availableUsers[0].id);
       }
@@ -87,7 +85,7 @@ const TransferModal = ({ isOpen, onClose, tool, onSuccess, currentUserId, canMan
     }
 
     setSubmitting(true);
-    onSuccess(selectedUserId);
+    await onSuccess(selectedUserId);
     setSubmitting(false);
     handleClose();
   };
@@ -111,12 +109,20 @@ const TransferModal = ({ isOpen, onClose, tool, onSuccess, currentUserId, canMan
             </Center>
           ) : (
             <VStack spacing={4} align="stretch">
-              <Text>
-                <strong>Инструмент:</strong> {tool.name}
-              </Text>
-              <Text fontSize="sm" color="gray.600">
-                Серийный номер: {tool.serialNumber}
-              </Text>
+              {tool ? (
+                <>
+                  <Text>
+                    <strong>Инструмент:</strong> {tool.name}
+                  </Text>
+                  <Text fontSize="sm" color="gray.600">
+                    Серийный номер: {tool.serialNumber}
+                  </Text>
+                </>
+              ) : (
+                <Text>
+                  Выбрано инструментов: <strong>{selectedCount}</strong>
+                </Text>
+              )}
 
               <FormControl isRequired>
                 <FormLabel>Выберите получателя</FormLabel>

@@ -19,7 +19,7 @@ import {
 } from '@chakra-ui/react';
 import api from '../services/api';
 
-const CheckinModal = ({ isOpen, onClose, tool, onSuccess }) => {
+const CheckinModal = ({ isOpen, onClose, tool, onSuccess, selectedCount }) => {
   const [warehouses, setWarehouses] = useState([]);
   const [selectedWarehouseId, setSelectedWarehouseId] = useState('');
   const [loading, setLoading] = useState(true);
@@ -36,7 +36,7 @@ const CheckinModal = ({ isOpen, onClose, tool, onSuccess }) => {
     try {
       const response = await api.get('/warehouses');
       setWarehouses(response.data.warehouses);
-      
+
       const defaultWarehouse = response.data.warehouses.find(w => w.isDefault);
       if (defaultWarehouse) {
         setSelectedWarehouseId(defaultWarehouse.id);
@@ -67,7 +67,7 @@ const CheckinModal = ({ isOpen, onClose, tool, onSuccess }) => {
     }
 
     setSubmitting(true);
-    onSuccess(selectedWarehouseId);
+    await onSuccess(selectedWarehouseId);
     setSubmitting(false);
     handleClose();
   };
@@ -91,12 +91,20 @@ const CheckinModal = ({ isOpen, onClose, tool, onSuccess }) => {
             </Center>
           ) : (
             <VStack spacing={4} align="stretch">
-              <Text>
-                <strong>Инструмент:</strong> {tool.name}
-              </Text>
-              <Text fontSize="sm" color="gray.600">
-                Серийный номер: {tool.serialNumber}
-              </Text>
+              {tool ? (
+                <>
+                  <Text>
+                    <strong>Инструмент:</strong> {tool.name}
+                  </Text>
+                  <Text fontSize="sm" color="gray.600">
+                    Серийный номер: {tool.serialNumber}
+                  </Text>
+                </>
+              ) : (
+                <Text>
+                  Выбрано инструментов: <strong>{selectedCount}</strong>
+                </Text>
+              )}
 
               <FormControl isRequired>
                 <FormLabel>Выберите склад</FormLabel>
@@ -118,8 +126,8 @@ const CheckinModal = ({ isOpen, onClose, tool, onSuccess }) => {
           <Button variant="ghost" mr={3} onClick={handleClose}>
             Отмена
           </Button>
-          <Button 
-            colorScheme="green" 
+          <Button
+            colorScheme="green"
             onClick={handleSubmit}
             isLoading={submitting}
             isDisabled={loading || !selectedWarehouseId}

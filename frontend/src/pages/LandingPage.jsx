@@ -12,7 +12,8 @@ import {
     FaBuilding, FaHardHat, FaHotel, FaBroom, FaUniversity, FaSearch, FaUnlock,
     FaMoneyBillWave, FaChartPie, FaEye, FaHandshake, FaLock, FaRocket, FaClock,
     FaVk, FaTelegram, FaEnvelope, FaPhone, FaArrowRight, FaMapMarkerAlt, FaUserCheck, FaWallet,
-    FaLaptop, FaCamera, FaStethoscope, FaDumbbell, FaStore, FaGlassCheers, FaHome, FaSignOutAlt, FaCog
+    FaLaptop, FaCamera, FaStethoscope, FaDumbbell, FaStore, FaGlassCheers, FaHome, FaSignOutAlt, FaCog,
+    FaAndroid, FaApple
 } from 'react-icons/fa';
 import { Avatar } from '@chakra-ui/react';
 import Logo from '../img/Logo.png';
@@ -446,6 +447,51 @@ const HeroSection = ({ navigate }) => {
                         >
                             Узнать больше
                         </Button>
+                    </MotionBox>
+
+                    <MotionBox
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.5 }}
+                        mt={8}
+                    >
+                        <Text fontSize="sm" color="gray.400" mb={3} fontWeight="medium" letterSpacing="wide" textTransform="uppercase">
+                            Доступно на мобильных устройствах
+                        </Text>
+                        <HStack spacing={4} justify="center">
+                            <Button
+                                as="a"
+                                href="https://expo.dev/artifacts/eas/wEYfEpqty4t65qUy6kTf7T.apk"
+                                target="_blank"
+                                size="md"
+                                variant="outline"
+                                colorScheme="gray"
+                                leftIcon={<Icon as={FaAndroid} color="green.500" w={6} h={6} />}
+                                _hover={{ bg: 'gray.50', borderColor: 'green.500' }}
+                                rounded="xl"
+                            >
+                                <Box textAlign="left">
+                                    <Text fontSize="xs" lineHeight="1">Скачать APK</Text>
+                                    <Text fontSize="sm" fontWeight="bold">Android</Text>
+                                </Box>
+                            </Button>
+                            <Button
+                                as="a"
+                                href="https://testflight.apple.com/join/EwezfJWW"
+                                target="_blank"
+                                size="md"
+                                variant="outline"
+                                colorScheme="gray"
+                                leftIcon={<Icon as={FaApple} color="black" w={6} h={6} />}
+                                _hover={{ bg: 'gray.50', borderColor: 'black' }}
+                                rounded="xl"
+                            >
+                                <Box textAlign="left">
+                                    <Text fontSize="xs" lineHeight="1">Скачать</Text>
+                                    <Text fontSize="sm" fontWeight="bold">TestFlight</Text>
+                                </Box>
+                            </Button>
+                        </HStack>
                     </MotionBox>
 
                     <MotionBox

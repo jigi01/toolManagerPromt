@@ -13,10 +13,12 @@ import DashboardEmployee from '../pages/DashboardEmployee';
 import ToolsPage from '../pages/ToolsPage';
 import ToolDetailsPage from '../pages/ToolDetailsPage';
 import UsersPage from '../pages/UsersPage';
+import UserProfilePage from '../pages/UserProfilePage';
 import RolesPage from '../pages/RolesPage';
 import WarehousesPage from '../pages/WarehousesPage';
 import SettingsPage from '../pages/SettingsPage';
 import LandingPage from '../pages/LandingPage';
+import TasksPage from '../pages/TasksPage';
 import PageTransition from '../components/PageTransition';
 import useAuthStore from '../store/authStore';
 
@@ -93,6 +95,21 @@ const AppRouter = () => {
         />
 
         <Route
+          path="/users/:id"
+          element={
+            <ProtectedRoute>
+              <PermissionRoute permission="USER_READ">
+                <Layout>
+                  <PageTransition>
+                    <UserProfilePage />
+                  </PageTransition>
+                </Layout>
+              </PermissionRoute>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/roles"
           element={
             <ProtectedRoute>
@@ -129,6 +146,19 @@ const AppRouter = () => {
               <Layout>
                 <PageTransition>
                   <SettingsPage />
+                </PageTransition>
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/tasks"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <PageTransition>
+                  <TasksPage />
                 </PageTransition>
               </Layout>
             </ProtectedRoute>

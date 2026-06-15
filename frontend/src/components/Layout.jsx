@@ -1,6 +1,6 @@
 import { Box, Flex, Button, Text, Container, useColorModeValue, HStack, Menu, MenuButton, MenuList, MenuItem, Avatar, MenuDivider, Image, IconButton, Drawer, DrawerBody, DrawerOverlay, DrawerContent, DrawerCloseButton, DrawerHeader, VStack, useDisclosure } from '@chakra-ui/react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { FiLogOut, FiTool, FiUsers, FiHome, FiShield, FiPackage, FiSettings, FiMenu } from 'react-icons/fi';
+import { FiLogOut, FiTool, FiUsers, FiHome, FiShield, FiPackage, FiSettings, FiMenu, FiCheckSquare, FiUser } from 'react-icons/fi';
 import useAuthStore from '../store/authStore';
 import Logo from '../img/Logo.png';
 
@@ -57,6 +57,7 @@ const Layout = ({ children }) => {
               {/* Desktop Nav */}
               <HStack spacing={4} display={{ base: 'none', md: 'flex' }}>
                 <Button as={Link} to="/dashboard" leftIcon={<FiHome />} variant="ghost" size="sm">Главная</Button>
+                <Button as={Link} to="/tasks" leftIcon={<FiCheckSquare />} variant="ghost" size="sm">Задачи</Button>
                 {hasPermission('TOOL_READ') && <Button as={Link} to="/tools" leftIcon={<FiTool />} variant="ghost" size="sm">Инструменты</Button>}
                 {hasPermission('USER_READ') && <Button as={Link} to="/users" leftIcon={<FiUsers />} variant="ghost" size="sm">Сотрудники</Button>}
                 {hasPermission('WAREHOUSE_READ') && <Button as={Link} to="/warehouses" leftIcon={<FiPackage />} variant="ghost" size="sm">Склады</Button>}
@@ -79,6 +80,9 @@ const Layout = ({ children }) => {
                 </HStack>
               </MenuButton>
               <MenuList>
+                <MenuItem icon={<FiUser />} as={Link} to={`/users/${user?.id}`}>
+                  Профиль
+                </MenuItem>
                 <MenuItem icon={<FiSettings />} as={Link} to="/settings">
                   Настройки
                 </MenuItem>
@@ -104,6 +108,7 @@ const Layout = ({ children }) => {
           <DrawerBody>
             <VStack spacing={4} mt={4} align="stretch">
               <NavLink to="/dashboard" icon={<FiHome />}>Главная</NavLink>
+              <NavLink to="/tasks" icon={<FiCheckSquare />}>Задачи</NavLink>
               {hasPermission('TOOL_READ') && <NavLink to="/tools" icon={<FiTool />}>Инструменты</NavLink>}
               {hasPermission('USER_READ') && <NavLink to="/users" icon={<FiUsers />}>Сотрудники</NavLink>}
               {hasPermission('WAREHOUSE_READ') && <NavLink to="/warehouses" icon={<FiPackage />}>Склады</NavLink>}

@@ -23,6 +23,7 @@ import useAuthStore from '../store/authStore';
 import ToolCard from '../components/ToolCard';
 import ToolTable from '../components/ToolTable';
 import EditToolModal from '../components/EditToolModal';
+import { useNavigate } from 'react-router-dom';
 
 const DashboardEmployee = () => {
   const [myTools, setMyTools] = useState([]);
@@ -34,6 +35,7 @@ const DashboardEmployee = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const toast = useToast();
+  const navigate = useNavigate();
   const { user, hasPermission } = useAuthStore();
 
   const canUpdate = hasPermission('TOOL_UPDATE');
@@ -45,6 +47,32 @@ const DashboardEmployee = () => {
     fetchMyTools();
     fetchCategories();
   }, [user, searchQuery, filterCategory]);
+
+  useEffect(() => {
+    checkNewTasks();
+  }, []);
+
+  const checkNewTasks = async () => {
+    try {
+      const response = await api.get('/tasks?status=PENDING');
+      if (response.data.tasks && response.data.tasks.length > 0) {
+        toast({
+            id: 'new-tasks-toast',
+            render: () => (
+              <Box color='white' p={3} bg='blue.500' borderRadius="md" cursor="pointer" onClick={() => navigate('/tasks')}>
+                <b>У вас есть новые задачи!</b>
+                <Text fontSize="sm">Ожидают выполнения: {response.data.tasks.length}. Нажмите, чтобы открыть.</Text>
+              </Box>
+            ),
+            position: 'top-right',
+            duration: 5000,
+            isClosable: true,
+        });
+      }
+    } catch (error) {
+      console.error('Ошибка при проверке задач:', error);
+    }
+  };
 
   const fetchMyTools = async () => {
     try {

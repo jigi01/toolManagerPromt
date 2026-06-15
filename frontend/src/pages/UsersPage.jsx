@@ -43,9 +43,12 @@ import {
   IconButton,
   Tooltip,
   Code,
-  Stack
+  Stack,
+  SimpleGrid,
+  ButtonGroup
 } from '@chakra-ui/react';
-import { FiMoreVertical, FiUserPlus, FiMail, FiTrash2, FiCopy } from 'react-icons/fi';
+import { FiMoreVertical, FiUserPlus, FiMail, FiTrash2, FiCopy, FiGrid, FiList } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import useAuthStore from '../store/authStore';
 
@@ -58,9 +61,11 @@ const UsersPage = () => {
   const [inviteRoleId, setInviteRoleId] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedRole, setSelectedRole] = useState('');
+  const [viewMode, setViewMode] = useState('table');
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { isOpen: isRoleModalOpen, onOpen: onRoleModalOpen, onClose: onRoleModalClose } = useDisclosure();
   const toast = useToast();
+  const navigate = useNavigate();
   const { user: currentUser, hasPermission } = useAuthStore();
 
   const canInvite = hasPermission('USER_INVITE');
@@ -274,8 +279,16 @@ const UsersPage = () => {
 
         <TabPanels>
           <TabPanel px={0}>
-            <Card>
-              <CardBody overflowX="auto">
+            <Stack direction="row" justify="flex-end" mb={4} px={{ base: 0, md: 2 }}>
+              <ButtonGroup size="sm" isAttached variant="outline">
+                <IconButton aria-label="Table view" icon={<FiList />} isActive={viewMode === 'table'} onClick={() => setViewMode('table')} />
+                <IconButton aria-label="Grid view" icon={<FiGrid />} isActive={viewMode === 'cards'} onClick={() => setViewMode('cards')} />
+              </ButtonGroup>
+            </Stack>
+
+            {viewMode === 'table' ? (
+              <Card>
+                <CardBody overflowX="auto">
                 <Table variant="simple" minW="800px">
                   <Thead>
                     <Tr>
@@ -289,7 +302,7 @@ const UsersPage = () => {
                   </Thead>
                   <Tbody>
                     {users.map((user) => (
-                      <Tr key={user.id}>
+                      <Tr key={user.id} _hover={{ bg: 'gray.50', cursor: 'pointer' }} onClick={() => navigate(`/users/${user.id}`)}>
                         <Td>
                           <HStack>
                             <Avatar size="sm" name={user.name} />
@@ -304,7 +317,7 @@ const UsersPage = () => {
                         </Td>
                         <Td>{user._count?.currentTools || 0}</Td>
                         <Td>{formatDate(user.createdAt)}</Td>
-                        <Td>
+                        <Td onClick={(e) => e.stopPropagation()}>
                           {user.id !== currentUser?.id && !user.role?.isBoss && (
                             <Menu>
                               <MenuButton
@@ -340,6 +353,39 @@ const UsersPage = () => {
                 </Table>
               </CardBody>
             </Card>
+            ) : (
+              <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
+                {users.map((user) => (
+                  <Card key={user.id} _hover={{ shadow: 'md', cursor: 'pointer' }} onClick={() => navigate(`/users/${user.id}`)} transition="all 0.2s">
+                    <CardBody>
+                      <HStack spacing={4} mb={4}>
+                        <Avatar size="md" name={user.name} />
+                        <Box>
+                          <Heading size="sm" noOfLines={1}>{user.name}</Heading>
+                          <Text fontSize="sm" color="gray.500" noOfLines={1}>{user.email}</Text>
+                        </Box>
+                      </HStack>
+                      <VStack align="stretch" spacing={2} fontSize="sm">
+                        <HStack justify="space-between">
+                          <Text color="gray.500">Роль:</Text>
+                          <Badge colorScheme={user.role?.isBoss ? 'purple' : 'blue'}>
+                            {user.role?.name || 'Без роли'}
+                          </Badge>
+                        </HStack>
+                        <HStack justify="space-between">
+                          <Text color="gray.500">Инструментов:</Text>
+                          <Text fontWeight="medium">{user._count?.currentTools || 0}</Text>
+                        </HStack>
+                        <HStack justify="space-between">
+                          <Text color="gray.500">Регистрация:</Text>
+                          <Text>{formatDate(user.createdAt)}</Text>
+                        </HStack>
+                      </VStack>
+                    </CardBody>
+                  </Card>
+                ))}
+              </SimpleGrid>
+            )}
           </TabPanel>
 
           {canInvite && (

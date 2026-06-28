@@ -23,6 +23,16 @@ import {
   CardBody,
   Stack,
   Divider,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+  FormControl,
+  FormLabel,
+  Textarea,
 } from '@chakra-ui/react';
 import { FiPlus, FiCheckCircle, FiPlay, FiXCircle } from 'react-icons/fi';
 import useTaskStore from '../store/taskStore';
@@ -48,9 +58,13 @@ const TasksPage = () => {
   const { tasks, isLoading, error, fetchTasks, updateTaskStatus } = useTaskStore();
   const { isBoss, user } = useAuthStore();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpen: isCancelOpen, onOpen: onCancelOpen, onClose: onCancelClose } = useDisclosure();
   const toast = useToast();
   
   const [filterStatus, setFilterStatus] = useState('');
+  const [taskToCancel, setTaskToCancel] = useState(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
     fetchTasks(filterStatus ? { status: filterStatus } : {});
@@ -65,6 +79,35 @@ const TasksPage = () => {
         duration: 3000,
         isClosable: true,
       });
+    }
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!cancelReason || cancelReason.trim().length < 5) {
+      toast({
+        title: 'Ошибка',
+        description: 'Причина отмены должна содержать минимум 5 символов',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+    
+    setIsCancelling(true);
+    const success = await updateTaskStatus(taskToCancel, 'CANCELLED', cancelReason);
+    setIsCancelling(false);
+    
+    if (success) {
+      toast({
+        title: 'Задача отменена',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+      onCancelClose();
+      setCancelReason('');
+      setTaskToCancel(null);
     }
   };
 
@@ -129,6 +172,11 @@ const TasksPage = () => {
                         {task.requiredCategories.map(c => c.name).join(', ')}
                       </Text>
                     )}
+                    {task.status === 'CANCELLED' && task.cancellationReason && (
+                      <Text color="red.600" mt={2}>
+                        <b>Причина отмены:</b> {task.cancellationReason}
+                      </Text>
+                    )}
                   </VStack>
                 </Box>
                 
@@ -136,7 +184,17 @@ const TasksPage = () => {
                   <VStack align="stretch" minW="150px">
                     {(isBoss || user.id === task.assigneeId) && task.status !== 'COMPLETED' && task.status !== 'CANCELLED' && (
                       <>
-                        {(task.status === 'PENDING' || task.status === 'IN_PROGRESS') && (
+                        {task.status === 'PENDING' && (
+                          <Button 
+                            size="sm" 
+                            colorScheme="blue" 
+                            leftIcon={<FiPlay />}
+                            onClick={() => handleStatusChange(task.id, 'IN_PROGRESS')}
+                          >
+                            Взять в работу
+                          </Button>
+                        )}
+                        {task.status === 'IN_PROGRESS' && (
                           <Button 
                             size="sm" 
                             colorScheme="green" 
@@ -146,17 +204,19 @@ const TasksPage = () => {
                             Завершить
                           </Button>
                         )}
-                        {isBoss && (
-                          <Button 
-                            size="sm" 
-                            colorScheme="red" 
-                            variant="outline"
-                            leftIcon={<FiXCircle />}
-                            onClick={() => handleStatusChange(task.id, 'CANCELLED')}
-                          >
-                            Отменить
-                          </Button>
-                        )}
+                        <Button 
+                          size="sm" 
+                          colorScheme="red" 
+                          variant="outline"
+                          leftIcon={<FiXCircle />}
+                          onClick={() => {
+                            setTaskToCancel(task.id);
+                            setCancelReason('');
+                            onCancelOpen();
+                          }}
+                        >
+                          Отменить
+                        </Button>
                       </>
                     )}
                   </VStack>
@@ -175,6 +235,34 @@ const TasksPage = () => {
       {isOpen && (
         <CreateTaskModal isOpen={isOpen} onClose={onClose} />
       )}
+
+      {/* Модальное окно отмены задачи */}
+      <Modal isOpen={isCancelOpen} onClose={onCancelClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Отмена задачи</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <FormControl isRequired>
+              <FormLabel>Причина отмены</FormLabel>
+              <Textarea 
+                placeholder="Укажите, почему задача отменяется (минимум 5 символов)..." 
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                autoFocus
+              />
+            </FormControl>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="ghost" mr={3} onClick={onCancelClose} isDisabled={isCancelling}>
+              Назад
+            </Button>
+            <Button colorScheme="red" onClick={handleConfirmCancel} isLoading={isCancelling}>
+              Подтвердить отмену
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 };

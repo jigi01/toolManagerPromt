@@ -58,7 +58,9 @@ const ToolCard = ({
   const getStatusBadge = (status) => {
     const statusMap = {
       AVAILABLE: { text: 'На складе', color: 'green' },
-      IN_USE: { text: 'В использовании', color: 'blue' }
+      IN_USE: { text: 'В использовании', color: 'blue' },
+      REPAIR: { text: 'В ремонте', color: 'orange' },
+      WRITTEN_OFF: { text: 'Списан', color: 'red' }
     };
     const { text, color } = statusMap[status] || { text: status, color: 'gray' };
     return <Badge colorScheme={color}>{text}</Badge>;
@@ -161,9 +163,9 @@ const ToolCard = ({
               )}
             </HStack>
 
-            <HStack justify="space-between" align="start">
-              <VStack align="start" spacing={1} flex={1}>
-                <HStack spacing={2}>
+            <HStack justify="space-between" align="start" w="100%">
+              <VStack align="start" spacing={1} flex={1} minW={0}>
+                <HStack spacing={2} flexWrap="wrap" rowGap={2}>
                   {getStatusBadge(tool.status)}
                   {tool.category && (
                     <Badge colorScheme="purple" fontSize="xs">

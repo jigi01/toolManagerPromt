@@ -31,7 +31,9 @@ const ToolTable = ({ tools, onDelete, onTransfer, onCheckin, canUpdate, onEdit, 
   const getStatusBadge = (status) => {
     const statusMap = {
       AVAILABLE: { text: 'На складе', color: 'green' },
-      IN_USE: { text: 'В использовании', color: 'blue' }
+      IN_USE: { text: 'В использовании', color: 'blue' },
+      REPAIR: { text: 'В ремонте', color: 'orange' },
+      WRITTEN_OFF: { text: 'Списан', color: 'red' }
     };
     const { text, color } = statusMap[status] || { text: status, color: 'gray' };
     return <Badge colorScheme={color}>{text}</Badge>;

@@ -38,10 +38,14 @@ const useTaskStore = create((set, get) => ({
     }
   },
 
-  updateTaskStatus: async (taskId, status) => {
+  updateTaskStatus: async (taskId, status, cancellationReason = null) => {
     set({ isLoading: true, error: null });
     try {
-      const { data } = await api.patch(`/tasks/${taskId}/status`, { status });
+      const payload = { status };
+      if (cancellationReason) {
+        payload.cancellationReason = cancellationReason;
+      }
+      const { data } = await api.patch(`/tasks/${taskId}/status`, payload);
       set((state) => ({
         tasks: state.tasks.map(t => t.id === taskId ? data.task : t),
         isLoading: false

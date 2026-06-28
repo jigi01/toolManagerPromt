@@ -297,7 +297,7 @@ const DashboardEmployee = () => {
           </CardBody>
         </Card>
       ) : viewMode === 'grid' ? (
-        <SimpleGrid columns={{ base: 1, md: 2, lg: 3, xl: 4 }} spacing={6}>
+        <SimpleGrid columns={{ base: 1, md: 2, lg: 3, xl: 3 }} spacing={6}>
           {myTools.map((tool) => (
             <ToolCard
               key={tool.id}

@@ -42,6 +42,7 @@ const ToolDetailsPage = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   const canUpdate = hasPermission('TOOL_UPDATE');
+  const canDelete = hasPermission('TOOL_DELETE');
 
   useEffect(() => {
     fetchToolDetails();
@@ -69,7 +70,9 @@ const ToolDetailsPage = () => {
     const statusMap = {
       AVAILABLE: { text: 'На складе', color: 'green' },
       IN_USE: { text: 'В использовании', color: 'blue' },
-      MAINTENANCE: { text: 'На обслуживании', color: 'orange' }
+      MAINTENANCE: { text: 'На обслуживании', color: 'orange' },
+      REPAIR: { text: 'В ремонте', color: 'orange' },
+      WRITTEN_OFF: { text: 'Списан', color: 'red' }
     };
     const { text, color } = statusMap[status] || { text: status, color: 'gray' };
     return <Badge colorScheme={color}>{text}</Badge>;
@@ -90,6 +93,29 @@ const ToolDetailsPage = () => {
     onClose();
   };
 
+  const handleDeleteTool = async () => {
+    if (!window.confirm('Вы уверены, что хотите удалить этот инструмент?')) return;
+
+    try {
+      await api.delete(`/tools/${id}`);
+      toast({
+        title: 'Инструмент удален',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+      navigate('/tools');
+    } catch (error) {
+      toast({
+        title: 'Ошибка',
+        description: error.response?.data?.error || 'Не удалось удалить инструмент',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
   if (loading) {
     return (
       <Center h="50vh">
@@ -106,11 +132,18 @@ const ToolDetailsPage = () => {
         <Button leftIcon={<FiArrowLeft />} variant="ghost" onClick={() => navigate(-1)}>
           Назад
         </Button>
-        {canUpdate && (
-          <Button leftIcon={<FiEdit2 />} colorScheme="blue" onClick={onOpen}>
-            Редактировать
-          </Button>
-        )}
+        <HStack>
+          {canDelete && (
+            <Button colorScheme="red" onClick={handleDeleteTool}>
+              Удалить
+            </Button>
+          )}
+          {canUpdate && (
+            <Button leftIcon={<FiEdit2 />} colorScheme="blue" onClick={onOpen}>
+              Редактировать
+            </Button>
+          )}
+        </HStack>
       </HStack>
 
       <Card>

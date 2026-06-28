@@ -414,6 +414,33 @@ const ToolsPage = () => {
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (!window.confirm(`Вы уверены, что хотите удалить ${selectedToolIds.size} инструмент(ов)?`)) return;
+
+    try {
+      await api.post('/tools/bulk-delete', {
+        toolIds: Array.from(selectedToolIds)
+      });
+      toast({
+        title: 'Инструменты удалены',
+        status: 'success',
+        duration: 3000,
+        isClosable: true
+      });
+      setSelectedToolIds(new Set());
+      setIsSelectionMode(false);
+      fetchTools();
+    } catch (error) {
+      toast({
+        title: 'Ошибка массового удаления',
+        description: error.response?.data?.error || 'Не удалось удалить инструменты',
+        status: 'error',
+        duration: 3000,
+        isClosable: true
+      });
+    }
+  };
+
   if (loading) {
     return (
       <Center h="50vh">
@@ -509,6 +536,8 @@ const ToolsPage = () => {
           >
             <option value="AVAILABLE">На складе</option>
             <option value="IN_USE">В использовании</option>
+            <option value="REPAIR">В ремонте</option>
+            <option value="WRITTEN_OFF">Списан</option>
           </Select>
 
           <Select
@@ -751,6 +780,18 @@ const ToolsPage = () => {
                       borderRadius="md"
                       border="1px solid"
                       borderColor="gray.200"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%23A0AEC0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
+                        toast({
+                          title: 'Ошибка загрузки превью',
+                          description: 'Убедитесь, что это прямая ссылка на картинку (заканчивается на .jpg, .png и т.д.), а не на веб-страницу.',
+                          status: 'warning',
+                          duration: 5000,
+                          isClosable: true,
+                          id: 'preview-error'
+                        });
+                      }}
                     />
                   </Box>
                 )}
@@ -799,6 +840,11 @@ const ToolsPage = () => {
               {canCheckin && (
                 <Button colorScheme="green" size="sm" onClick={onBulkCheckinOpen}>
                   На склад
+                </Button>
+              )}
+              {canDelete && (
+                <Button colorScheme="red" size="sm" onClick={handleBulkDelete}>
+                  Удалить
                 </Button>
               )}
               <Button size="sm" onClick={() => setSelectedToolIds(new Set())}>

@@ -28,7 +28,8 @@ const EditToolModal = ({ isOpen, onClose, tool, onSuccess }) => {
     description: '',
     imageUrl: '',
     price: '',
-    categoryId: ''
+    categoryId: '',
+    status: ''
   });
   const [categories, setCategories] = useState([]);
   const [imageFile, setImageFile] = useState(null);
@@ -44,7 +45,8 @@ const EditToolModal = ({ isOpen, onClose, tool, onSuccess }) => {
         description: tool.description || '',
         imageUrl: tool.imageUrl || '',
         price: tool.price ? tool.price.toString() : '',
-        categoryId: tool.categoryId || ''
+        categoryId: tool.categoryId || '',
+        status: tool.status || 'AVAILABLE'
       });
       setImagePreview(tool.imageUrl || '');
     }
@@ -134,6 +136,7 @@ const EditToolModal = ({ isOpen, onClose, tool, onSuccess }) => {
       if (formData.description) formDataPayload.append('description', formData.description);
       if (formData.price) formDataPayload.append('price', formData.price);
       if (formData.categoryId) formDataPayload.append('categoryId', formData.categoryId);
+      if (formData.status) formDataPayload.append('status', formData.status);
 
       // Handle image
       if (imageFile) {
@@ -222,6 +225,19 @@ const EditToolModal = ({ isOpen, onClose, tool, onSuccess }) => {
               </FormControl>
 
               <FormControl>
+                <FormLabel>Статус</FormLabel>
+                <Select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                >
+                  <option value="AVAILABLE">На складе</option>
+                  <option value="IN_USE">В использовании</option>
+                  <option value="REPAIR">В ремонте</option>
+                  <option value="WRITTEN_OFF">Списан</option>
+                </Select>
+              </FormControl>
+
+              <FormControl>
                 <FormLabel>Цена</FormLabel>
                 <Input
                   type="number"
@@ -266,6 +282,18 @@ const EditToolModal = ({ isOpen, onClose, tool, onSuccess }) => {
                     borderRadius="md"
                     border="1px solid"
                     borderColor="gray.200"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%23A0AEC0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
+                      toast({
+                        title: 'Ошибка загрузки превью',
+                        description: 'Убедитесь, что это прямая ссылка на картинку (заканчивается на .jpg, .png и т.д.), а не на веб-страницу.',
+                        status: 'warning',
+                        duration: 5000,
+                        isClosable: true,
+                        id: 'edit-preview-error'
+                      });
+                    }}
                   />
                 </Box>
               )}

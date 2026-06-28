@@ -88,7 +88,7 @@ const LoginPage = () => {
     } catch (error) {
       toast({
         title: 'Ошибка входа',
-        description: error.response?.data?.error || 'Неверный email или пароль',
+        description: error.response?.data?.error || (error.message === 'Network Error' ? 'Сервер недоступен' : 'Неверный email или пароль'),
         status: 'error',
         duration: 5000,
         isClosable: true,
